@@ -1,0 +1,20 @@
+/* Estilos globais do Gestão de Valor. Todas as páginas usam este arquivo. */
+
+:root {
+  --cor-primaria: #0b2265; /* azul da capa da minuta */
+  --bs-font-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background-color: #f6f7fb;
+}
+
+.bg-primario {
+  background-color: var(--cor-primaria);
+}
+
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}

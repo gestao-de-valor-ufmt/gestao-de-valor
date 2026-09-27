@@ -1,2 +1,86 @@
-# gestao-de-valor
-Metodologia didática e sistema de precificação para prestadores de serviços — Seminário Integrador BCT/UFMT
+# Gestão de Valor
+
+Metodologia didática e sistema de precificação para prestadores de serviços — Seminário Integrador BCT/UFMT (Campus Várzea Grande).
+
+Ferramenta gratuita e de código aberto para ajudar MEIs e profissionais autônomos a calcular o preço dos seus serviços com base nos custos reais, em vez de "achismo".
+
+## Funcionalidades previstas
+
+- **Custos fixos**: cadastro de despesas recorrentes (aluguel, internet, taxas).
+- **Banco de insumos**: materiais usados nos serviços, com cálculo de rendimento por uso.
+- **Ficha técnica**: "cardápio" de serviços com insumos e tempo de execução.
+- **Hora técnica**: rateio dos custos fixos por hora produtiva.
+- **Precificação e break-even**: preço sugerido e quantidade mínima de serviços por mês.
+
+## Tecnologias
+
+| Camada | Tecnologia | Hospedagem (gratuita) |
+|---|---|---|
+| Backend | Python + FastAPI | Render |
+| Banco de dados | Google Cloud Firestore | Firebase (plano Spark) |
+| Autenticação | Firebase Authentication | Firebase (plano Spark) |
+| Frontend | HTML, CSS (Bootstrap 5), JavaScript | Firebase Hosting |
+
+## Estrutura do projeto
+
+```
+backend/
+  app/
+    core/      # motor de cálculo (fórmulas puras)
+    routers/   # endpoints da API
+    models/    # schemas Pydantic
+    db/        # acesso ao Firestore
+    main.py    # ponto de entrada da API
+  tests/       # testes automáticos (pytest)
+frontend/
+  css/         # estilos globais
+  js/          # scripts
+  index.html
+docs/          # minuta, fórmulas, manual e material didático
+```
+
+## Como rodar localmente
+
+### Backend
+
+Requisito: Python 3.11 ou superior.
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+# source .venv/bin/activate     # Linux/Mac
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload
+```
+
+- API: http://localhost:8000
+- Documentação (Swagger): http://localhost:8000/docs
+
+Rodar os testes:
+
+```bash
+cd backend
+pytest
+```
+
+### Frontend
+
+Abra `frontend/index.html` no navegador, ou use a extensão **Live Server** do VS Code.
+
+## Como contribuir
+
+Leia o [CONTRIBUTING.md](CONTRIBUTING.md) antes de começar.
+
+## Equipe
+
+- Elize Josefa Ferreira dos Santos
+- Everton Antonio Geraldi
+- Douglas da Silva
+- Fábio Estácio dos Santos
+- Fernando Muniz da Cruz
+- Joilson Frederico F. dos Santos
+
+## Licença
+
+[GNU General Public License v3.0](LICENSE)

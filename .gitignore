@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ===== Gestao de Valor =====
+# Credenciais do Firebase (NUNCA enviar ao GitHub)
+*firebase-adminsdk*.json
+firebase-service-account*.json
+service-account*.json
+
+# Firebase CLI
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Node (caso usem ferramentas de frontend)
+node_modules/
+
+# Editores e sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+Thumbs.db
+.DS_Store

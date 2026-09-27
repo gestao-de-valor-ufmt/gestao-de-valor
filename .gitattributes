@@ -1,0 +1,5 @@
+# Normaliza finais de linha entre Windows, Linux e Mac
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
