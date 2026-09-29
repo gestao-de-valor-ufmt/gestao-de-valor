@@ -37,7 +37,7 @@ function montarLayout() {
 
   document.getElementById("rodape").innerHTML = `
     <footer class="container py-4 small text-secondary d-flex flex-wrap justify-content-between gap-2">
-      <span>Gestão de Valor · Seminário Integrador BCT/UFMT · GPL-3.0</span>
+      <span>Gestão de Valor · Seminário Integrador V · BC&T/UFMT · GPL-3.0</span>
       <button class="btn btn-link btn-sm p-0 text-secondary" onclick="if (confirm('Apagar suas alterações e voltar aos dados de exemplo?')) restaurarExemplo()">
         <i class="bi bi-arrow-counterclockwise me-1"></i>Restaurar dados de exemplo
       </button>
