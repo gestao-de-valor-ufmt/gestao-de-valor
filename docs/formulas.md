@@ -38,10 +38,36 @@ Exemplo: (R$ 1.715,90 + R$ 3.000,00) / 99 h = **R$ 47,64 por hora**.
 ## 4. Custo do serviço (ficha técnica)
 
 ```
-custo_serviço = Σ(custo_por_uso × quantidade) + custo_hora × (minutos / 60)
+custo_serviço = insumos + custos_miúdos + mão_de_obra
+
+insumos      = Σ(custo_por_uso × quantidade)
+mão_de_obra  = custo_hora × (minutos / 60)
 ```
 
-Exemplo (manicure, 40 min): R$ 3,72 de insumos + R$ 31,76 de mão de obra = **R$ 35,48**.
+- **Custos miúdos**: um valor fixo em R$ **por serviço** para gastos pequenos e difíceis de medir,
+  como gás, detergente ou combustível para buscar material. Cada serviço tem o seu, porque um
+  alongamento gasta mais que uma manicure.
+
+Exemplo (manicure, 40 min, sem custos miúdos): R$ 3,72 de insumos + R$ 31,76 de mão de obra = **R$ 35,48**.
+
+### Modo completo e modo simples
+
+O usuário escolhe se a hora de trabalho entra no custo:
+
+| | Modo completo (padrão) | Modo simples |
+|---|---|---|
+| Insumos | ✅ | ✅ |
+| Custos miúdos | ✅ | ✅ |
+| Mão de obra (hora técnica) | ✅ | ❌ (vale 0) |
+| Margem, impostos e taxas | ✅ | ✅ |
+
+O modo simples é como muitos microempreendedores calculam na prática: material + "uma
+gordura" + lucro. Nesse modo, as contas fixas e o salário precisam sair da margem de lucro.
+Por isso o **ponto de equilíbrio continua sendo calculado com os custos fixos e o pró-labore**:
+ele mostra se a margem escolhida sustenta o negócio.
+
+Exemplo (manicure, modo simples, R$ 2,00 de custos miúdos, margem de 60%): o preço cai para
+R$ 15,89, mas seriam necessários **495 atendimentos** no mês, e só cabem 148 na agenda.
 
 ## 5. Preço de venda (markup divisor)
 
@@ -59,7 +85,7 @@ Para MEI, o percentual de impostos costuma ser 0%, porque o DAS é um valor fixo
 ## 6. Ponto de equilíbrio
 
 ```
-custo_variável      = insumos + preço × (%impostos + %taxa_cartão) / 100
+custo_variável      = insumos + custos_miúdos + preço × (%impostos + %taxa_cartão) / 100
 margem_contribuição = preço − custo_variável
 ponto_equilíbrio    = ⌈ (custos_fixos + pró_labore) / margem_contribuição ⌉
 ```
@@ -78,6 +104,35 @@ capacidade = ⌊ horas_produtivas × 60 / minutos_do_serviço ⌋
 É quantos atendimentos cabem no mês, arredondado **para baixo**. Comparar com o ponto de
 equilíbrio mostra se a meta é viável: a manicure precisa de 115 dos 148 possíveis (78%).
 
+## 7. Desconto máximo
+
+O usuário define a **margem mínima** que aceita, ou seja, o menor lucro com que topa trabalhar.
+O preço mínimo é o próprio markup divisor calculado com essa margem:
+
+```
+preço_mínimo    = custo_serviço / (1 − (%margem_mínima + %impostos + %taxa_cartão) / 100)
+desconto_máximo = (preço − preço_mínimo) / preço × 100
+```
+
+- **Margem mínima de 0%**: o desconto vai até o ponto de não ter lucro nem prejuízo.
+- **Margem mínima negativa**: aceita prejuízo de propósito, por exemplo numa troca de
+  produtos ou serviços em vez de pagamento em dinheiro.
+- **Desconto máximo negativo**: o preço atual já está abaixo do mínimo, então não há espaço para desconto.
+
+Exemplo (manicure, margem mínima de 0%): preço mínimo de **R$ 36,96**, desconto máximo de
+**20,83%** sobre os R$ 46,68.
+
+### Simular um desconto
+
+Para avaliar um desconto qualquer, o sistema faz a conta inversa do markup e calcula a margem
+que sobra no preço com desconto:
+
+```
+margem_efetiva = (1 − custo_serviço / preço_com_desconto) × 100 − %impostos − %taxa_cartão
+```
+
+O desconto está dentro do limite quando `margem_efetiva ≥ margem_mínima`.
+
 ## Decisões tomadas
 
 1. **Custos fixos e pró-labore entram na hora técnica.** É o que a minuta define ("rateio das
@@ -86,6 +141,11 @@ equilíbrio mostra se a meta é viável: a manicure precisa de 115 dos 148 poss�
    taxas. A parte fixa já está no numerador (custos fixos + pró-labore).
 3. **DAS do MEI é custo fixo**, não percentual sobre a venda.
 4. **Pró-labore é informado separado** dos custos fixos, para o usuário enxergar o próprio salário.
+5. **Hora de trabalho é opcional** (modo simples), mas o ponto de equilíbrio sempre considera os
+   custos fixos e o pró-labore.
+6. **Custos miúdos são um valor por serviço**, não um valor único para todos.
+7. **A margem é sempre calculada sobre o preço final** (markup divisor), também no modo simples.
+8. **A margem mínima do desconto é escolhida pelo usuário** e pode ser negativa.
 
 ## Precisão numérica e arredondamento
 

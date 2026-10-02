@@ -13,7 +13,10 @@ from app.core.precificacao import (
     custo_insumos,
     custo_mao_de_obra,
     custo_por_uso,
+    custo_servico,
+    desconto_maximo,
     horas_produtivas,
+    margem_efetiva,
     ponto_equilibrio,
     preco_sugerido,
 )
@@ -51,6 +54,28 @@ def test_cenario_completo_manicure():
     assert arredondar_moeda(preco) == 46.68
     assert ponto_equilibrio(CUSTOS_FIXOS + PRO_LABORE, preco, insumos, impostos=0, taxa_cartao=4) == 115
     assert capacidade_mensal(horas, minutos_por_servico=40) == 148
+
+    # Desconto máximo sem ter prejuízo (margem mínima de 0%)
+    preco_minimo = preco_sugerido(custo, margem=0, impostos=0, taxa_cartao=4)
+    assert arredondar_moeda(preco_minimo) == 36.96
+    assert round(desconto_maximo(preco, preco_minimo), 2) == 20.83
+
+
+def test_cenario_modo_simples_manicure():
+    """Modo simples: insumos + custos miúdos + margem, sem hora de trabalho.
+
+    O preço fica bem menor, mas o ponto de equilíbrio mostra que a agenda
+    não comporta os atendimentos necessários para pagar as contas e o salário.
+    """
+    horas = horas_produtivas(22, 6, 75)
+    insumos = custo_insumos([(custo_por_uso(p, r), q) for p, r, q in INSUMOS_MANICURE])
+    custo = custo_servico(insumos, custos_miudos=2)
+    preco = preco_sugerido(custo, margem=60, impostos=0, taxa_cartao=4)
+
+    assert arredondar_moeda(preco) == 15.89
+    equilibrio = ponto_equilibrio(CUSTOS_FIXOS + PRO_LABORE, preco, insumos + 2, 0, 4)
+    assert equilibrio == 495
+    assert equilibrio > capacidade_mensal(horas, 40)
 
 
 # ---------- Fórmula por fórmula ----------
@@ -105,6 +130,54 @@ def test_preco_sugerido_sem_percentuais_e_o_proprio_custo():
 def test_preco_sugerido_percentuais_100_ou_mais():
     with pytest.raises(ValueError):
         preco_sugerido(30, 60, 30, 10)
+
+
+def test_preco_sugerido_aceita_margem_negativa():
+    # Margem de -50%: o preço cobre só 2/3 do custo (ex.: troca de serviços)
+    assert preco_sugerido(30, -50, 0, 0) == pytest.approx(20)
+
+
+def test_preco_sugerido_taxa_negativa():
+    with pytest.raises(ValueError):
+        preco_sugerido(30, 20, -1, 0)
+
+
+def test_custo_servico_modos():
+    assert custo_servico(10) == 10
+    assert custo_servico(10, custos_miudos=2) == 12
+    assert custo_servico(10, custos_miudos=2, mao_de_obra=30) == 42
+
+
+def test_custo_servico_componente_negativo():
+    with pytest.raises(ValueError):
+        custo_servico(10, custos_miudos=-2)
+
+
+def test_desconto_maximo():
+    # Preço R$ 50, mínimo R$ 40 → dá para descontar até 20%
+    assert desconto_maximo(50, 40) == pytest.approx(20)
+
+
+def test_desconto_maximo_negativo_quando_preco_abaixo_do_minimo():
+    assert desconto_maximo(40, 50) == pytest.approx(-25)
+
+
+def test_desconto_maximo_com_margem_minima_negativa():
+    # Aceitando até 10% de prejuízo, o desconto pode passar da margem de lucro
+    custo = 30
+    preco = preco_sugerido(custo, 20, 0, 0)        # R$ 37,50
+    minimo = preco_sugerido(custo, -10, 0, 0)      # R$ 27,27
+    assert desconto_maximo(preco, minimo) > 20
+
+
+def test_margem_efetiva_e_o_inverso_do_preco_sugerido():
+    preco = preco_sugerido(35.48, 20, 0, 4)
+    assert margem_efetiva(35.48, preco, 0, 4) == pytest.approx(20)
+
+
+def test_margem_efetiva_com_desconto():
+    # Custo R$ 30 vendido a R$ 30 com 4% de taxa → prejuízo de 4%
+    assert margem_efetiva(30, 30, 0, 4) == pytest.approx(-4)
 
 
 def test_ponto_equilibrio():
