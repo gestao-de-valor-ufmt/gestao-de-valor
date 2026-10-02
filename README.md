@@ -6,11 +6,13 @@ Ferramenta gratuita e de código aberto para ajudar MEIs e profissionais autôno
 
 ## Funcionalidades previstas
 
-- **Custos fixos**: cadastro de despesas recorrentes (aluguel, internet, taxas).
-- **Banco de insumos**: materiais usados nos serviços, com cálculo de rendimento por uso.
-- **Ficha técnica**: "cardápio" de serviços com insumos e tempo de execução.
-- **Hora técnica**: rateio dos custos fixos por hora produtiva.
-- **Precificação e break-even**: preço sugerido e quantidade mínima de serviços por mês.
+- **Seu mês**: salário desejado, contas fixas (DAS, celular, aluguel) e horas de atendimento.
+- **Materiais**: o que se compra para os atendimentos, com cálculo do custo por uso.
+- **Serviços**: "cardápio" com material, deslocamento, tempo e preço cobrado de cada serviço.
+- **Valor da hora**: rateio do salário e das contas pelas horas de atendimento (hora técnica).
+- **Calculadora**: preço mínimo, atendimentos necessários no mês (ponto de equilíbrio) e desconto máximo.
+
+Protótipo publicado: https://gestao-de-valor-ufmt.github.io/gestao-de-valor/
 
 ## Tecnologias
 

@@ -1,31 +1,22 @@
 // Dados de exemplo (mock) e armazenamento no navegador.
 // Enquanto o backend não existe, tudo fica salvo no localStorage de quem está navegando.
 
-const CHAVE_ARMAZENAMENTO = "gestao-de-valor:dados";
+// A versão na chave faz o navegador ignorar dados salvos em formatos antigos do protótipo.
+const CHAVE_ARMAZENAMENTO = "gestao-de-valor:dados:v2";
 
 const DADOS_EXEMPLO = {
-  negocio: "Studio Bela Mão (exemplo)",
+  negocio: "Manicure a domicílio (exemplo)",
   configuracao: {
-    proLabore: 3000,
+    salario: 2500, // quanto quer ganhar por mês
+    reserva: 0, // dinheiro extra para emergências e investimentos
     diasPorMes: 22,
-    horasPorDia: 6,
-    produtividade: 75, // % do tempo realmente vendável
-    margem: 20,
-    impostos: 0, // MEI paga DAS fixo, que já está nos custos fixos
-    taxaCartao: 4,
-    incluirMaoDeObra: true, // false = modo simples: insumos + custos miúdos + margem
-    margemMinima: 0, // menor margem aceita ao dar desconto (pode ser negativa)
+    horasPorDia: 6, // horas atendendo clientes, contando o deslocamento
+    taxaCartao: 0, // % da maquininha; 0 para quem recebe em dinheiro ou Pix
   },
   custosFixos: [
-    { id: 1, nome: "Aluguel do espaço", categoria: "Estrutura", valor: 900 },
-    { id: 2, nome: "Energia elétrica", categoria: "Contas", valor: 180 },
-    { id: 3, nome: "Internet", categoria: "Contas", valor: 100 },
-    { id: 4, nome: "Água", categoria: "Contas", valor: 60 },
-    { id: 5, nome: "Celular", categoria: "Contas", valor: 60 },
-    { id: 6, nome: "DAS MEI", categoria: "Impostos", valor: 75.9 },
-    { id: 7, nome: "Material de limpeza", categoria: "Estrutura", valor: 90 },
-    { id: 8, nome: "Depreciação de equipamentos", categoria: "Depreciação", valor: 150 },
-    { id: 9, nome: "Divulgação (Instagram)", categoria: "Marketing", valor: 100 },
+    { id: 1, nome: "Celular e internet", valor: 80 },
+    { id: 2, nome: "DAS MEI", valor: 75.9 },
+    { id: 3, nome: "Reposição de alicates e equipamentos", valor: 30 },
   ],
   insumos: [
     { id: 1, nome: "Esmalte", embalagem: "Frasco 8 ml", preco: 12, rendimento: 20 },
@@ -43,7 +34,7 @@ const DADOS_EXEMPLO = {
   ],
   servicos: [
     {
-      id: 1, nome: "Manicure", minutos: 40, custosMiudos: 1.5,
+      id: 1, nome: "Manicure", minutos: 60, outrosGastos: 2, precoCobrado: 40,
       insumos: [
         { insumoId: 1, quantidade: 1 }, { insumoId: 2, quantidade: 1 }, { insumoId: 3, quantidade: 1 },
         { insumoId: 4, quantidade: 1 }, { insumoId: 5, quantidade: 2 }, { insumoId: 6, quantidade: 1 },
@@ -51,7 +42,7 @@ const DADOS_EXEMPLO = {
       ],
     },
     {
-      id: 2, nome: "Pedicure", minutos: 50, custosMiudos: 2,
+      id: 2, nome: "Pedicure", minutos: 70, outrosGastos: 2, precoCobrado: 45,
       insumos: [
         { insumoId: 1, quantidade: 1 }, { insumoId: 2, quantidade: 1 }, { insumoId: 3, quantidade: 1 },
         { insumoId: 4, quantidade: 1 }, { insumoId: 5, quantidade: 2 }, { insumoId: 6, quantidade: 1 },
@@ -60,7 +51,7 @@ const DADOS_EXEMPLO = {
       ],
     },
     {
-      id: 3, nome: "Pé e mão", minutos: 90, custosMiudos: 3,
+      id: 3, nome: "Pé e mão", minutos: 110, outrosGastos: 2, precoCobrado: 75,
       insumos: [
         { insumoId: 1, quantidade: 2 }, { insumoId: 2, quantidade: 2 }, { insumoId: 3, quantidade: 2 },
         { insumoId: 4, quantidade: 2 }, { insumoId: 5, quantidade: 4 }, { insumoId: 6, quantidade: 2 },
@@ -69,14 +60,14 @@ const DADOS_EXEMPLO = {
       ],
     },
     {
-      id: 4, nome: "Esmaltação em gel", minutos: 60, custosMiudos: 2.5,
+      id: 4, nome: "Esmaltação em gel", minutos: 80, outrosGastos: 2, precoCobrado: 70,
       insumos: [
         { insumoId: 2, quantidade: 1 }, { insumoId: 11, quantidade: 1 }, { insumoId: 3, quantidade: 1 },
         { insumoId: 6, quantidade: 1 }, { insumoId: 8, quantidade: 1 }, { insumoId: 5, quantidade: 1 },
       ],
     },
     {
-      id: 5, nome: "Alongamento em gel", minutos: 150, custosMiudos: 4,
+      id: 5, nome: "Alongamento em gel", minutos: 170, outrosGastos: 2, precoCobrado: 150,
       insumos: [
         { insumoId: 12, quantidade: 1 }, { insumoId: 11, quantidade: 2 }, { insumoId: 2, quantidade: 1 },
         { insumoId: 3, quantidade: 1 }, { insumoId: 6, quantidade: 2 }, { insumoId: 8, quantidade: 1 },
@@ -89,18 +80,11 @@ const DADOS_EXEMPLO = {
 function carregarDados() {
   try {
     const salvo = localStorage.getItem(CHAVE_ARMAZENAMENTO);
-    if (salvo) return completarCampos(JSON.parse(salvo));
+    if (salvo) return JSON.parse(salvo);
   } catch {
     // Navegador sem acesso ao localStorage: segue com os dados de exemplo.
   }
   return structuredClone(DADOS_EXEMPLO);
-}
-
-// Dados salvos por versões antigas do protótipo não têm os campos novos.
-function completarCampos(dados) {
-  dados.configuracao = { ...DADOS_EXEMPLO.configuracao, ...dados.configuracao };
-  for (const servico of dados.servicos) servico.custosMiudos ??= 0;
-  return dados;
 }
 
 function salvarDados(dados) {

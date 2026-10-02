@@ -4,148 +4,132 @@ Este documento descreve as fórmulas do sistema. A implementação fica em
 [`backend/app/core/precificacao.py`](../backend/app/core/precificacao.py) e os testes em
 [`backend/tests/test_precificacao.py`](../backend/tests/test_precificacao.py).
 
-## 1. Custo do insumo por uso
+## A ideia em uma frase
 
-```
-custo_por_uso = preço_pago_na_embalagem / rendimento_em_usos
-```
+Cada atendimento precisa pagar **o que ele gasta** (material e deslocamento) e **um pedaço da
+meta do mês** (salário e contas). O tamanho desse pedaço depende do tempo que o atendimento leva.
 
-Exemplo: esmalte de R$ 12,00 que rende 20 aplicações → R$ 0,60 por aplicação.
+O sistema responde três perguntas:
 
-## 2. Horas produtivas
+1. **Quanto preciso cobrar, no mínimo?**
+2. **Cobrando o que cobro hoje, quantos atendimentos preciso fazer no mês?**
+3. **Quanto posso dar de desconto sem mexer no meu salário?**
 
-```
-horas_produtivas = dias_por_mês × horas_por_dia × (produtividade / 100)
-```
+## As perguntas ao usuário
 
-A **produtividade** é o percentual do tempo que realmente vira atendimento. Desconta limpeza,
-intervalos, deslocamento e horários vagos.
-
-Exemplo: 22 dias × 6 h × 75% = **99 horas produtivas**.
-
-## 3. Custo da hora técnica
-
-```
-custo_hora = (custos_fixos_mensais + pró_labore) / horas_produtivas
-```
-
-- **Custos fixos**: o que se paga todo mês, trabalhando ou não: aluguel, energia, internet, DAS do MEI, depreciação de equipamentos.
-- **Depreciação mensal** de um equipamento = `valor_pago / vida_útil_em_meses`.
-- **Pró-labore**: o salário que o dono do negócio quer tirar para si.
-
-Exemplo: (R$ 1.715,90 + R$ 3.000,00) / 99 h = **R$ 47,64 por hora**.
-
-## 4. Custo do serviço (ficha técnica)
-
-```
-custo_serviço = insumos + custos_miúdos + mão_de_obra
-
-insumos      = Σ(custo_por_uso × quantidade)
-mão_de_obra  = custo_hora × (minutos / 60)
-```
-
-- **Custos miúdos**: um valor fixo em R$ **por serviço** para gastos pequenos e difíceis de medir,
-  como gás, detergente ou combustível para buscar material. Cada serviço tem o seu, porque um
-  alongamento gasta mais que uma manicure.
-
-Exemplo (manicure, 40 min, sem custos miúdos): R$ 3,72 de insumos + R$ 31,76 de mão de obra = **R$ 35,48**.
-
-### Modo completo e modo simples
-
-O usuário escolhe se a hora de trabalho entra no custo:
-
-| | Modo completo (padrão) | Modo simples |
+| Pergunta | Onde fica | Exemplo |
 |---|---|---|
-| Insumos | ✅ | ✅ |
-| Custos miúdos | ✅ | ✅ |
-| Mão de obra (hora técnica) | ✅ | ❌ (vale 0) |
-| Margem, impostos e taxas | ✅ | ✅ |
+| Quanto você quer ganhar por mês? | Seu mês / Calculadora | R$ 2.500 |
+| Que contas você paga todo mês? | Seu mês | R$ 185,90 (celular, DAS, reposição de equipamentos) |
+| Quantos dias e horas por dia você atende? | Seu mês | 22 dias × 6 h |
+| Quanto material cada serviço usa? | Materiais / Serviços | R$ 3,72 na manicure |
+| Quanto gasta de deslocamento e outros? | Serviços / Calculadora | R$ 2,00 |
+| Quanto tempo leva cada atendimento? | Serviços / Calculadora | 60 min, contando o deslocamento |
+| Quanto você cobra hoje? | Serviços / Calculadora | R$ 40 |
 
-O modo simples é como muitos microempreendedores calculam na prática: material + "uma
-gordura" + lucro. Nesse modo, as contas fixas e o salário precisam sair da margem de lucro.
-Por isso o **ponto de equilíbrio continua sendo calculado com os custos fixos e o pró-labore**:
-ele mostra se a margem escolhida sustenta o negócio.
-
-Exemplo (manicure, modo simples, R$ 2,00 de custos miúdos, margem de 60%): o preço cai para
-R$ 15,89, mas seriam necessários **495 atendimentos** no mês, e só cabem 148 na agenda.
-
-## 5. Preço de venda (markup divisor)
+## 1. Meta do mês
 
 ```
-preço = custo_serviço / (1 − (%margem + %impostos + %taxa_cartão) / 100)
+meta = salário + contas_fixas + reserva
 ```
 
-Os percentuais incidem sobre o **preço final**, por isso se **divide** em vez de multiplicar.
-Somar 30% ao custo (`custo × 1,30`) daria um preço menor que o necessário.
+- **Salário**: o que a pessoa quer levar para casa (o "pró-labore").
+- **Contas fixas**: o que se paga todo mês, trabalhando ou não: DAS do MEI, celular, aluguel.
+  Para equipamentos que se desgastam, guarda-se `valor_pago / meses_de_vida_útil` por mês.
+- **Reserva** (opcional): dinheiro para emergências e para investir no negócio.
 
-Exemplo (manicure): R$ 35,48 / (1 − 0,24) = **R$ 46,68**.
+Exemplo: R$ 2.500 + R$ 185,90 + R$ 0 = **R$ 2.685,90**.
 
-Para MEI, o percentual de impostos costuma ser 0%, porque o DAS é um valor fixo e já entra nos custos fixos.
-
-## 6. Ponto de equilíbrio
-
-```
-custo_variável      = insumos + custos_miúdos + preço × (%impostos + %taxa_cartão) / 100
-margem_contribuição = preço − custo_variável
-ponto_equilíbrio    = ⌈ (custos_fixos + pró_labore) / margem_contribuição ⌉
-```
-
-É quantos atendimentos no mês são necessários para pagar todos os custos e o pró-labore.
-O resultado é arredondado **para cima** (⌈ ⌉), porque não existe meio atendimento.
-
-Exemplo (manicure): R$ 4.715,90 / R$ 41,09 = **115 atendimentos**.
-
-### Capacidade mensal
+## 2. Quanto cada hora precisa render
 
 ```
-capacidade = ⌊ horas_produtivas × 60 / minutos_do_serviço ⌋
+horas_de_atendimento = dias_por_mês × horas_por_dia
+valor_da_hora        = meta / horas_de_atendimento
 ```
 
-É quantos atendimentos cabem no mês, arredondado **para baixo**. Comparar com o ponto de
-equilíbrio mostra se a meta é viável: a manicure precisa de 115 dos 148 possíveis (78%).
+Exemplo: 22 × 6 = 132 h → R$ 2.685,90 / 132 = **R$ 20,35 por hora**.
 
-## 7. Desconto máximo
-
-O usuário define a **margem mínima** que aceita, ou seja, o menor lucro com que topa trabalhar.
-O preço mínimo é o próprio markup divisor calculado com essa margem:
+## 3. Gasto de cada atendimento
 
 ```
-preço_mínimo    = custo_serviço / (1 − (%margem_mínima + %impostos + %taxa_cartão) / 100)
-desconto_máximo = (preço − preço_mínimo) / preço × 100
+custo_por_uso = preço_da_embalagem / rendimento_em_usos
+material      = Σ(custo_por_uso × quantidade)
+gasto         = material + deslocamento_e_outros
 ```
 
-- **Margem mínima de 0%**: o desconto vai até o ponto de não ter lucro nem prejuízo.
-- **Margem mínima negativa**: aceita prejuízo de propósito, por exemplo numa troca de
-  produtos ou serviços em vez de pagamento em dinheiro.
-- **Desconto máximo negativo**: o preço atual já está abaixo do mínimo, então não há espaço para desconto.
+- **Deslocamento e outros**: um valor por serviço para gastos difíceis de medir (gasolina,
+  passagem, gás, detergente).
 
-Exemplo (manicure, margem mínima de 0%): preço mínimo de **R$ 36,96**, desconto máximo de
-**20,83%** sobre os R$ 46,68.
+Exemplo (manicure): R$ 3,72 de material + R$ 2,00 de deslocamento = **R$ 5,72**.
 
-### Simular um desconto
-
-Para avaliar um desconto qualquer, o sistema faz a conta inversa do markup e calcula a margem
-que sobra no preço com desconto:
+## 4. Preço mínimo
 
 ```
-margem_efetiva = (1 − custo_serviço / preço_com_desconto) × 100 − %impostos − %taxa_cartão
+parte_da_meta = valor_da_hora × (minutos / 60)
+preço_mínimo  = (gasto + parte_da_meta) / (1 − taxa_maquininha / 100)
 ```
 
-O desconto está dentro do limite quando `margem_efetiva ≥ margem_mínima`.
+A taxa da maquininha é cobrada **sobre o preço**, por isso se divide. Para quem recebe em
+dinheiro ou Pix, a taxa é 0 e o preço mínimo é só `gasto + parte_da_meta`.
+
+Exemplo (manicure, 60 min, sem maquininha): R$ 5,72 + R$ 20,35 = **R$ 26,07**.
+
+## 5. Atendimentos necessários
+
+```
+sobra_por_atendimento = preço − preço × taxa_maquininha / 100 − gasto
+atendimentos          = ⌈ meta / sobra_por_atendimento ⌉
+capacidade            = ⌊ horas_de_atendimento × 60 / minutos ⌋
+```
+
+- Atendimentos é arredondado **para cima** (⌈ ⌉): não existe meio atendimento.
+- Capacidade é arredondada **para baixo** (⌊ ⌋): é quantos atendimentos inteiros cabem no mês.
+- O cálculo considera que a pessoa faz **só aquele serviço**. A tela deixa isso explícito.
+
+Exemplo (manicure cobrando R$ 40): sobram R$ 34,28 → R$ 2.685,90 / R$ 34,28 = **79 atendimentos**,
+dos 132 que cabem no mês.
+
+**Propriedade útil:** cobrando exatamente o preço mínimo, os atendimentos necessários são iguais
+à capacidade. Ou seja, o preço mínimo é o preço que exige **lotar a agenda**. Há um teste
+automático que confere isso.
+
+**Caso sem meta:** se a pessoa não define salário nem contas, a meta é zero. O sistema mostra
+só quanto sobra por cliente. Exemplo: cobra R$ 50 e gasta R$ 10 → sobram R$ 40; com 100
+atendimentos, R$ 4.000.
+
+## 6. Desconto máximo
+
+```
+desconto_máximo = preço − preço_mínimo
+```
+
+Negativo significa que o preço já está abaixo do mínimo e não há espaço para desconto.
+
+Exemplo (manicure): R$ 40 − R$ 26,07 = **R$ 13,93**.
+
+## Histórico: por que a calculadora mudou
+
+A primeira versão usava conceitos de contabilidade: **margem de lucro em %** (markup divisor),
+**impostos %** e um **modo simples** sem a hora de trabalho. Ao testar com um caso real (uma
+manicure que cobra R$ 50 e gasta R$ 10), a equipe percebeu que:
+
+1. "Margem de 30%" era entendida como "30% a mais que o custo", mas significava "30% do preço
+   final". O preço sugerido ficava muito baixo e o resultado parecia errado.
+2. O modo simples e o modo completo usavam a palavra "margem" com significados diferentes.
+3. Os dados de exemplo (um salão com aluguel) não se pareciam com o público-alvo.
+
+A versão atual troca porcentagens por **valores em reais** e por perguntas do dia a dia. As
+fórmulas de base continuam as mesmas: o "valor da hora" é a antiga "hora técnica", e o
+"preço mínimo" é o antigo preço sugerido com margem zero.
 
 ## Decisões tomadas
 
-1. **Custos fixos e pró-labore entram na hora técnica.** É o que a minuta define ("rateio das
-   despesas fixas para determinar o custo exato da hora de trabalho").
-2. **Sem contagem dupla no ponto de equilíbrio.** O custo variável usa só insumos, impostos e
-   taxas. A parte fixa já está no numerador (custos fixos + pró-labore).
-3. **DAS do MEI é custo fixo**, não percentual sobre a venda.
-4. **Pró-labore é informado separado** dos custos fixos, para o usuário enxergar o próprio salário.
-5. **Hora de trabalho é opcional** (modo simples), mas o ponto de equilíbrio sempre considera os
-   custos fixos e o pró-labore.
-6. **Custos miúdos são um valor por serviço**, não um valor único para todos.
-7. **A margem é sempre calculada sobre o preço final** (markup divisor), também no modo simples.
-8. **A margem mínima do desconto é escolhida pelo usuário** e pode ser negativa.
+1. **Salário e contas entram no preço pelo tempo** de cada atendimento (rateio por hora).
+2. **Sem margem em %:** o lucro está no salário e na reserva, informados em reais.
+3. **Impostos do MEI entram como conta fixa** (DAS), não como percentual.
+4. **A taxa da maquininha é o único percentual**, porque todo mundo a conhece.
+5. **Deslocamento e outros gastos são um valor por serviço.**
+6. **O tempo do atendimento inclui o deslocamento.**
 
 ## Precisão numérica e arredondamento
 
@@ -168,8 +152,8 @@ O sistema usa `float` em todos os cálculos e arredonda **só no resultado final
 
 - Os valores são pequenos (centavos a milhares de reais). O erro do float aparece por volta da
   15ª casa decimal, muito abaixo de um centavo.
-- Arredondar no meio do caminho acumularia erro. Por exemplo, arredondar a hora técnica para
-  R$ 47,64 antes de calcular a mão de obra pode mudar o centavo do preço final.
+- Arredondar no meio do caminho acumularia erro. Por exemplo, arredondar o valor da hora para
+  R$ 20,35 antes de calcular o preço pode mudar o centavo do resultado.
 - O código fica mais simples do que com o tipo `Decimal`, que faz contas exatas mas exige mais
   cuidado em todas as operações.
 

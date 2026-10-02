@@ -2,8 +2,8 @@
 
 const PAGINAS = [
   { arquivo: "index.html", titulo: "Painel", icone: "bi-speedometer2" },
-  { arquivo: "custos.html", titulo: "Custos fixos", icone: "bi-house-gear" },
-  { arquivo: "insumos.html", titulo: "Insumos", icone: "bi-box-seam" },
+  { arquivo: "custos.html", titulo: "Seu mês", icone: "bi-wallet2" },
+  { arquivo: "insumos.html", titulo: "Materiais", icone: "bi-box-seam" },
   { arquivo: "servicos.html", titulo: "Serviços", icone: "bi-card-checklist" },
   { arquivo: "calculadora.html", titulo: "Calculadora", icone: "bi-calculator" },
 ];

@@ -1,29 +1,34 @@
-// Página de custos fixos: lista de despesas e configuração da hora técnica.
+// Página "Seu mês": salário, contas fixas, tempo de atendimento e taxa da maquininha.
 
 const dados = carregarDados();
-const CAMPOS_CONFIG = ["proLabore", "diasPorMes", "horasPorDia", "produtividade"];
+const CAMPOS_CONFIG = ["salario", "reserva", "diasPorMes", "horasPorDia", "taxaCartao"];
 
 function montarTabela() {
   document.getElementById("tabela-custos").innerHTML = dados.custosFixos.map((c) => `
     <tr>
       <td>${escapar(c.nome)}</td>
-      <td><span class="badge text-bg-light border">${escapar(c.categoria)}</span></td>
       <td class="text-end">${moeda(c.valor)}</td>
-      <td class="text-end">
+      <td class="text-end" style="width: 2rem">
         <button class="btn btn-sm btn-link text-danger p-0" onclick="removerCusto(${c.id})" aria-label="Remover ${escapar(c.nome)}">
           <i class="bi bi-trash"></i>
         </button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="4" class="text-secondary">Nenhuma despesa cadastrada.</td></tr>`;
-  document.getElementById("total-custos").textContent = moeda(totalCustosFixos(dados));
+    </tr>`).join("") || `<tr><td colspan="3" class="text-secondary">Nenhuma conta cadastrada.</td></tr>`;
+  document.getElementById("total-custos").textContent = moeda(totalContasFixas(dados));
 }
 
 function montarResumo() {
-  document.getElementById("produtividade-valor").textContent = `${dados.configuracao.produtividade}%`;
-  document.getElementById("res-fixos").textContent = moeda(totalCustosFixos(dados));
-  document.getElementById("res-prolabore").textContent = moeda(dados.configuracao.proLabore);
-  document.getElementById("res-horas").textContent = `${numero(horasProdutivas(dados), 1)} h`;
-  document.getElementById("res-hora").textContent = moeda(custoHora(dados));
+  const config = dados.configuracao;
+  document.getElementById("res-salario").textContent = moeda(config.salario);
+  document.getElementById("res-contas").textContent = moeda(totalContasFixas(dados));
+  document.getElementById("res-reserva").textContent = moeda(config.reserva || 0);
+  document.getElementById("res-meta").textContent = moeda(metaMensal(dados));
+
+  const horas = horasDeAtendimento(dados);
+  document.getElementById("res-hora").innerHTML = horas > 0
+    ? `Você atende <strong>${numero(horas)} horas</strong> por mês. Para bater a meta, cada hora atendendo precisa
+       render <strong>${moeda(valorDaHora(dados))}</strong>, além do material.`
+    : "Preencha os dias e as horas de atendimento.";
 }
 
 function atualizar() {
@@ -37,17 +42,17 @@ function removerCusto(id) {
   atualizar();
 }
 
-function adicionarCusto(nome, categoria, valor) {
-  dados.custosFixos.push({ id: proximoId(dados.custosFixos), nome, categoria, valor });
+function adicionarCusto(nome, valor) {
+  dados.custosFixos.push({ id: proximoId(dados.custosFixos), nome, valor });
   atualizar();
 }
 
 function iniciar() {
   for (const campo of CAMPOS_CONFIG) {
     const input = document.getElementById(campo);
-    input.value = dados.configuracao[campo];
+    input.value = dados.configuracao[campo] ?? 0;
     input.addEventListener("input", () => {
-      dados.configuracao[campo] = Number(input.value) || 0;
+      dados.configuracao[campo] = Math.max(0, Number(input.value) || 0);
       atualizar();
     });
   }
@@ -56,7 +61,6 @@ function iniciar() {
     e.preventDefault();
     adicionarCusto(
       document.getElementById("custo-nome").value.trim(),
-      document.getElementById("custo-categoria").value,
       Number(document.getElementById("custo-valor").value),
     );
     e.target.reset();
@@ -78,7 +82,7 @@ function iniciar() {
   document.getElementById("form-depreciacao").addEventListener("submit", (e) => {
     e.preventDefault();
     const nome = document.getElementById("dep-nome").value.trim();
-    adicionarCusto(`Depreciação: ${nome}`, "Depreciação", Math.round(calcularDepreciacao() * 100) / 100);
+    adicionarCusto(`Reposição: ${nome}`, Math.round(calcularDepreciacao() * 100) / 100);
     e.target.reset();
     document.getElementById("dep-resultado").textContent = "—";
     bootstrap.Modal.getInstance(document.getElementById("modal-depreciacao")).hide();

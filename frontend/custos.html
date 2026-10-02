@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Custos fixos · Gestão de Valor</title>
+  <title>Seu mês · Gestão de Valor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -14,67 +14,99 @@
   <header id="topo"></header>
 
   <main class="container py-4">
-    <h1 class="h3 titulo-pagina">Custos fixos e hora técnica</h1>
-    <p class="text-secondary mb-4">Tudo o que você paga todo mês, trabalhando ou não, e quanto vale cada hora do seu trabalho.</p>
+    <h1 class="h3 titulo-pagina">Seu mês</h1>
+    <p class="text-secondary mb-4">Quanto você quer ganhar, quais contas você paga e quanto tempo você atende.</p>
 
     <div class="row g-3">
-      <div class="col-lg-8">
+      <div class="col-lg-7">
         <div class="card mb-3">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h2 class="h6 fw-semibold mb-0">Despesas do mês</h2>
+            <h2 class="h6 fw-semibold mb-3">Quanto você quer ganhar</h2>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label" for="salario">Seu salário por mês</label>
+                <div class="input-group">
+                  <span class="input-group-text">R$</span>
+                  <input class="form-control" type="number" min="0" step="50" id="salario">
+                </div>
+                <div class="form-text">O dinheiro que você quer levar para casa.</div>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label" for="reserva">Reserva por mês <span class="text-secondary">(opcional)</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">R$</span>
+                  <input class="form-control" type="number" min="0" step="50" id="reserva">
+                </div>
+                <div class="form-text">Para emergências e para investir no negócio.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <h2 class="h6 fw-semibold mb-0">Contas que você paga todo mês</h2>
               <div class="d-flex gap-2">
                 <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-depreciacao">
-                  <i class="bi bi-tools me-1"></i>Depreciação
+                  <i class="bi bi-tools me-1"></i>Equipamentos
                 </button>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-custo">
-                  <i class="bi bi-plus-lg me-1"></i>Nova despesa
+                  <i class="bi bi-plus-lg me-1"></i>Nova conta
                 </button>
               </div>
             </div>
+            <p class="small text-secondary mb-2">Mesmo que você não atenda ninguém. Se não tiver nenhuma, pode deixar vazio.</p>
             <div class="table-responsive">
               <table class="table align-middle mb-0">
-                <thead><tr><th>Despesa</th><th>Categoria</th><th class="text-end">Valor mensal</th><th></th></tr></thead>
                 <tbody id="tabela-custos"></tbody>
-                <tfoot><tr><th colspan="2">Total</th><th class="text-end" id="total-custos"></th><th></th></tr></tfoot>
+                <tfoot><tr><th>Total</th><th class="text-end" id="total-custos"></th><th></th></tr></tfoot>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h2 class="h6 fw-semibold mb-3">Seu tempo e seus pagamentos</h2>
+            <div class="row g-3">
+              <div class="col-6 col-sm-4">
+                <label class="form-label" for="diasPorMes">Dias de trabalho por mês</label>
+                <input class="form-control" type="number" min="1" max="31" id="diasPorMes">
+              </div>
+              <div class="col-6 col-sm-4">
+                <label class="form-label" for="horasPorDia">Horas atendendo por dia</label>
+                <input class="form-control" type="number" min="1" max="24" step="0.5" id="horasPorDia">
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label" for="taxaCartao">Taxa da maquininha</label>
+                <div class="input-group">
+                  <input class="form-control" type="number" min="0" max="20" step="0.1" id="taxaCartao">
+                  <span class="input-group-text">%</span>
+                </div>
+              </div>
+              <div class="col-12 form-text mt-1">
+                Conte só as horas com cliente, incluindo o deslocamento. Se recebe em dinheiro ou Pix, deixe a taxa em 0.
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-4">
+      <div class="col-lg-5">
         <div class="card">
           <div class="card-body">
-            <h2 class="h6 fw-semibold mb-3">Sua hora técnica</h2>
-            <form id="form-config" class="row g-2">
-              <div class="col-12">
-                <label class="form-label small" for="proLabore">Pró-labore desejado (R$/mês)</label>
-                <input class="form-control" type="number" min="0" step="50" id="proLabore">
-                <div class="form-text">O salário que você quer tirar para si.</div>
-              </div>
-              <div class="col-6">
-                <label class="form-label small" for="diasPorMes">Dias de trabalho/mês</label>
-                <input class="form-control" type="number" min="1" max="31" id="diasPorMes">
-              </div>
-              <div class="col-6">
-                <label class="form-label small" for="horasPorDia">Horas por dia</label>
-                <input class="form-control" type="number" min="1" max="24" id="horasPorDia">
-              </div>
-              <div class="col-12">
-                <label class="form-label small" for="produtividade">Tempo realmente vendável: <strong id="produtividade-valor"></strong></label>
-                <input class="form-range" type="range" min="30" max="100" step="5" id="produtividade">
-                <div class="form-text">Desconte limpeza, intervalos e horários vagos.</div>
-              </div>
-            </form>
-            <hr>
-            <div class="linha-composicao"><span>Custos fixos</span><span id="res-fixos"></span></div>
-            <div class="linha-composicao"><span>+ Pró-labore</span><span id="res-prolabore"></span></div>
-            <div class="linha-composicao"><span>÷ Horas produtivas</span><span id="res-horas"></span></div>
+            <h2 class="h6 fw-semibold mb-3">Resumo do seu mês</h2>
+            <div class="linha-composicao"><span>Seu salário</span><span id="res-salario"></span></div>
+            <div class="linha-composicao"><span>+ Contas do mês</span><span id="res-contas"></span></div>
+            <div class="linha-composicao"><span>+ Reserva</span><span id="res-reserva"></span></div>
             <div class="mt-3 text-center">
-              <div class="small text-secondary">Custo da sua hora</div>
-              <div class="preco-destaque" id="res-hora"></div>
+              <div class="small text-secondary">Sua meta do mês</div>
+              <div class="preco-destaque" id="res-meta"></div>
+              <div class="small text-secondary mt-1">além do material de cada atendimento</div>
             </div>
+            <hr>
+            <p class="small mb-0" id="res-hora"></p>
           </div>
         </div>
       </div>
@@ -85,23 +117,16 @@
     <div class="modal-dialog">
       <form class="modal-content" id="form-custo">
         <div class="modal-header">
-          <h2 class="modal-title h5" id="titulo-modal-custo">Nova despesa</h2>
+          <h2 class="modal-title h5" id="titulo-modal-custo">Nova conta</h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body row g-3">
           <div class="col-12">
             <label class="form-label" for="custo-nome">Descrição</label>
-            <input class="form-control" id="custo-nome" required placeholder="Ex.: Aluguel">
+            <input class="form-control" id="custo-nome" required placeholder="Ex.: Celular">
           </div>
-          <div class="col-6">
-            <label class="form-label" for="custo-categoria">Categoria</label>
-            <select class="form-select" id="custo-categoria">
-              <option>Estrutura</option><option>Contas</option><option>Impostos</option>
-              <option>Marketing</option><option>Depreciação</option><option>Outros</option>
-            </select>
-          </div>
-          <div class="col-6">
-            <label class="form-label" for="custo-valor">Valor mensal (R$)</label>
+          <div class="col-12">
+            <label class="form-label" for="custo-valor">Valor por mês (R$)</label>
             <input class="form-control" id="custo-valor" type="number" min="0" step="0.01" required>
           </div>
         </div>
@@ -117,30 +142,31 @@
     <div class="modal-dialog">
       <form class="modal-content" id="form-depreciacao">
         <div class="modal-header">
-          <h2 class="modal-title h5" id="titulo-modal-dep">Calcular depreciação</h2>
+          <h2 class="modal-title h5" id="titulo-modal-dep">Guardar para trocar equipamentos</h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
         </div>
         <div class="modal-body row g-3">
           <p class="small text-secondary mb-0">
-            Equipamentos se desgastam e um dia precisam ser trocados. Guardar um pouco por mês evita ser pego de surpresa.
+            Alicates, cabines e cadeiras se desgastam e um dia precisam ser trocados.
+            Guardar um pouco por mês evita ser pego de surpresa.
           </p>
           <div class="col-12">
             <label class="form-label" for="dep-nome">Equipamento</label>
             <input class="form-control" id="dep-nome" required placeholder="Ex.: Cabine UV">
           </div>
           <div class="col-6">
-            <label class="form-label" for="dep-valor">Valor pago (R$)</label>
+            <label class="form-label" for="dep-valor">Quanto custou (R$)</label>
             <input class="form-control" id="dep-valor" type="number" min="0" step="0.01" required>
           </div>
           <div class="col-6">
             <label class="form-label" for="dep-meses">Dura quantos meses?</label>
             <input class="form-control" id="dep-meses" type="number" min="1" required>
           </div>
-          <div class="col-12 small">Por mês: <strong id="dep-resultado">—</strong></div>
+          <div class="col-12 small">Guardar por mês: <strong id="dep-resultado">—</strong></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button class="btn btn-primary">Adicionar aos custos</button>
+          <button class="btn btn-primary">Adicionar às contas</button>
         </div>
       </form>
     </div>

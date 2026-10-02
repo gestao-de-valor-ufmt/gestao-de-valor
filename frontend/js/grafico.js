@@ -1,15 +1,12 @@
-// Gráfico do ponto de equilíbrio (Chart.js): receita x custo total por quantidade vendida.
+// Gráfico "quando bato a meta": o que sobra no bolso x meta do mês, por número de atendimentos.
 
-function desenharGraficoEquilibrio(canvas, graficoAnterior, dados, analise) {
+function desenharGraficoMeta(canvas, graficoAnterior, analise) {
   if (graficoAnterior) graficoAnterior.destroy();
-  if (analise.preco === null) return null;
 
-  const limite = Math.max(analise.capacidade, analise.pontoEquilibrio) + 10;
+  const limite = Math.max(analise.capacidade, analise.necessarios || 0) + 5;
   const passo = Math.max(1, Math.round(limite / 12));
   const quantidades = [];
   for (let q = 0; q <= limite; q += passo) quantidades.push(q);
-
-  const fixo = custoMensalTotal(dados);
 
   return new Chart(canvas, {
     type: "line",
@@ -17,19 +14,20 @@ function desenharGraficoEquilibrio(canvas, graficoAnterior, dados, analise) {
       labels: quantidades,
       datasets: [
         {
-          label: "Receita",
-          data: quantidades.map((q) => q * analise.preco),
+          label: "O que sobra para você",
+          data: quantidades.map((q) => Math.max(0, q * analise.sobra)),
           borderColor: "#1f4fbf",
           backgroundColor: "#1f4fbf",
           borderWidth: 2,
           pointRadius: 0,
         },
         {
-          label: "Custo total",
-          data: quantidades.map((q) => fixo + q * analise.custoVariavel),
+          label: "Sua meta do mês",
+          data: quantidades.map(() => analise.meta),
           borderColor: "#d9480f",
           backgroundColor: "#d9480f",
           borderWidth: 2,
+          borderDash: [6, 4],
           pointRadius: 0,
         },
       ],
@@ -38,7 +36,7 @@ function desenharGraficoEquilibrio(canvas, graficoAnterior, dados, analise) {
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
-        legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8 } },
+        legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8 } },
         tooltip: {
           callbacks: {
             title: (itens) => `${itens[0].label} atendimentos no mês`,
@@ -52,6 +50,7 @@ function desenharGraficoEquilibrio(canvas, graficoAnterior, dados, analise) {
           grid: { display: false },
         },
         y: {
+          beginAtZero: true,
           ticks: { callback: (v) => moeda(v).replace(",00", "") },
           grid: { color: "#eef1f7" },
         },
