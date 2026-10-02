@@ -1,6 +1,7 @@
 // Página de serviços: o que cada atendimento usa de material, quanto tempo leva e quanto se cobra.
 
 const dados = carregarDados();
+let editandoId = null; // id do serviço aberto no modal; null quando é um serviço novo
 
 function campoValor(id, campo, valor, passo) {
   return `
@@ -33,9 +34,14 @@ function montarLista() {
                 <h2 class="h5 fw-semibold mb-0">${escapar(s.nome)}</h2>
                 <span class="small text-secondary"><i class="bi bi-clock me-1"></i>${s.minutos} min</span>
               </div>
-              <button class="btn btn-sm btn-link text-danger p-0" onclick="removerServico(${s.id})" aria-label="Remover ${escapar(s.nome)}">
-                <i class="bi bi-trash"></i>
-              </button>
+              <div class="d-flex gap-3">
+                <button class="btn btn-sm btn-link p-0" onclick="abrirEdicao(${s.id})" aria-label="Editar ${escapar(s.nome)}" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-link text-danger p-0" onclick="removerServico(${s.id})" aria-label="Remover ${escapar(s.nome)}" title="Remover">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
             </div>
             <div class="linha-composicao small"><span>Material</span><span>${moeda(a.material)}</span></div>
             <div class="linha-composicao small align-items-center">
@@ -81,26 +87,49 @@ function removerServico(id) {
   montarLista();
 }
 
-function adicionarLinhaInsumo() {
-  const opcoes = dados.insumos.map((i) => `<option value="${i.id}">${escapar(i.nome)}</option>`).join("");
+function adicionarLinhaInsumo(insumoId = null, quantidade = 1) {
+  const opcoes = dados.insumos.map((i) =>
+    `<option value="${i.id}" ${i.id === insumoId ? "selected" : ""}>${escapar(i.nome)}</option>`).join("");
   const linha = document.createElement("div");
   linha.className = "row g-2 align-items-center linha-insumo";
   linha.innerHTML = `
     <div class="col"><select class="form-select form-select-sm" aria-label="Material">${opcoes}</select></div>
-    <div class="col-3"><input class="form-control form-control-sm" type="number" min="0.1" step="0.1" value="1" aria-label="Quantidade"></div>
+    <div class="col-3"><input class="form-control form-control-sm" type="number" min="0.1" step="0.1" value="${quantidade}" aria-label="Quantidade"></div>
     <div class="col-auto"><button type="button" class="btn btn-sm btn-link text-danger p-0" aria-label="Remover linha"><i class="bi bi-x-lg"></i></button></div>`;
   linha.querySelector("button").addEventListener("click", () => linha.remove());
   document.getElementById("linhas-insumos").appendChild(linha);
 }
 
-function iniciar() {
-  document.getElementById("adicionar-linha").addEventListener("click", adicionarLinhaInsumo);
+function abrirEdicao(id) {
+  editandoId = id;
+  bootstrap.Modal.getOrCreateInstance(document.getElementById("modal-servico")).show();
+}
 
-  document.getElementById("modal-servico").addEventListener("show.bs.modal", () => {
-    document.getElementById("form-servico").reset();
-    document.getElementById("linhas-insumos").innerHTML = "";
+// Prepara o modal: em branco para um serviço novo, ou preenchido para editar.
+function prepararModal(evento) {
+  // Aberto pelo botão "Novo serviço" (data-bs-toggle), o evento traz o botão em relatedTarget.
+  if (evento.relatedTarget) editandoId = null;
+  const servico = dados.servicos.find((s) => s.id === editandoId);
+
+  document.getElementById("form-servico").reset();
+  document.getElementById("linhas-insumos").innerHTML = "";
+  document.getElementById("titulo-modal-servico").textContent = servico ? "Editar serviço" : "Novo serviço";
+  document.getElementById("botao-salvar-servico").textContent = servico ? "Salvar alterações" : "Salvar serviço";
+
+  if (!servico) {
     adicionarLinhaInsumo();
-  });
+    return;
+  }
+  document.getElementById("servico-nome").value = servico.nome;
+  document.getElementById("servico-minutos").value = servico.minutos;
+  document.getElementById("servico-outros").value = servico.outrosGastos ?? 0;
+  document.getElementById("servico-preco").value = servico.precoCobrado ?? 0;
+  for (const item of servico.insumos) adicionarLinhaInsumo(item.insumoId, item.quantidade);
+}
+
+function iniciar() {
+  document.getElementById("adicionar-linha").addEventListener("click", () => adicionarLinhaInsumo());
+  document.getElementById("modal-servico").addEventListener("show.bs.modal", prepararModal);
 
   document.getElementById("form-servico").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -109,14 +138,19 @@ function iniciar() {
       quantidade: Number(linha.querySelector("input").value) || 0,
     })).filter((i) => i.quantidade > 0);
 
-    dados.servicos.push({
-      id: proximoId(dados.servicos),
+    const campos = {
       nome: document.getElementById("servico-nome").value.trim(),
       minutos: Number(document.getElementById("servico-minutos").value),
       outrosGastos: Number(document.getElementById("servico-outros").value) || 0,
       precoCobrado: Number(document.getElementById("servico-preco").value) || 0,
       insumos,
-    });
+    };
+    const existente = dados.servicos.find((s) => s.id === editandoId);
+    if (existente) {
+      Object.assign(existente, campos);
+    } else {
+      dados.servicos.push({ id: proximoId(dados.servicos), ...campos });
+    }
     salvarDados(dados);
     montarLista();
     bootstrap.Modal.getInstance(document.getElementById("modal-servico")).hide();
