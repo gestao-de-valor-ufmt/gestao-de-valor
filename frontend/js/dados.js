@@ -13,6 +13,8 @@ const DADOS_EXEMPLO = {
     margem: 20,
     impostos: 0, // MEI paga DAS fixo, que já está nos custos fixos
     taxaCartao: 4,
+    incluirMaoDeObra: true, // false = modo simples: insumos + custos miúdos + margem
+    margemMinima: 0, // menor margem aceita ao dar desconto (pode ser negativa)
   },
   custosFixos: [
     { id: 1, nome: "Aluguel do espaço", categoria: "Estrutura", valor: 900 },
@@ -41,7 +43,7 @@ const DADOS_EXEMPLO = {
   ],
   servicos: [
     {
-      id: 1, nome: "Manicure", minutos: 40,
+      id: 1, nome: "Manicure", minutos: 40, custosMiudos: 1.5,
       insumos: [
         { insumoId: 1, quantidade: 1 }, { insumoId: 2, quantidade: 1 }, { insumoId: 3, quantidade: 1 },
         { insumoId: 4, quantidade: 1 }, { insumoId: 5, quantidade: 2 }, { insumoId: 6, quantidade: 1 },
@@ -49,7 +51,7 @@ const DADOS_EXEMPLO = {
       ],
     },
     {
-      id: 2, nome: "Pedicure", minutos: 50,
+      id: 2, nome: "Pedicure", minutos: 50, custosMiudos: 2,
       insumos: [
         { insumoId: 1, quantidade: 1 }, { insumoId: 2, quantidade: 1 }, { insumoId: 3, quantidade: 1 },
         { insumoId: 4, quantidade: 1 }, { insumoId: 5, quantidade: 2 }, { insumoId: 6, quantidade: 1 },
@@ -58,7 +60,7 @@ const DADOS_EXEMPLO = {
       ],
     },
     {
-      id: 3, nome: "Pé e mão", minutos: 90,
+      id: 3, nome: "Pé e mão", minutos: 90, custosMiudos: 3,
       insumos: [
         { insumoId: 1, quantidade: 2 }, { insumoId: 2, quantidade: 2 }, { insumoId: 3, quantidade: 2 },
         { insumoId: 4, quantidade: 2 }, { insumoId: 5, quantidade: 4 }, { insumoId: 6, quantidade: 2 },
@@ -67,14 +69,14 @@ const DADOS_EXEMPLO = {
       ],
     },
     {
-      id: 4, nome: "Esmaltação em gel", minutos: 60,
+      id: 4, nome: "Esmaltação em gel", minutos: 60, custosMiudos: 2.5,
       insumos: [
         { insumoId: 2, quantidade: 1 }, { insumoId: 11, quantidade: 1 }, { insumoId: 3, quantidade: 1 },
         { insumoId: 6, quantidade: 1 }, { insumoId: 8, quantidade: 1 }, { insumoId: 5, quantidade: 1 },
       ],
     },
     {
-      id: 5, nome: "Alongamento em gel", minutos: 150,
+      id: 5, nome: "Alongamento em gel", minutos: 150, custosMiudos: 4,
       insumos: [
         { insumoId: 12, quantidade: 1 }, { insumoId: 11, quantidade: 2 }, { insumoId: 2, quantidade: 1 },
         { insumoId: 3, quantidade: 1 }, { insumoId: 6, quantidade: 2 }, { insumoId: 8, quantidade: 1 },
@@ -87,11 +89,18 @@ const DADOS_EXEMPLO = {
 function carregarDados() {
   try {
     const salvo = localStorage.getItem(CHAVE_ARMAZENAMENTO);
-    if (salvo) return JSON.parse(salvo);
+    if (salvo) return completarCampos(JSON.parse(salvo));
   } catch {
     // Navegador sem acesso ao localStorage: segue com os dados de exemplo.
   }
   return structuredClone(DADOS_EXEMPLO);
+}
+
+// Dados salvos por versões antigas do protótipo não têm os campos novos.
+function completarCampos(dados) {
+  dados.configuracao = { ...DADOS_EXEMPLO.configuracao, ...dados.configuracao };
+  for (const servico of dados.servicos) servico.custosMiudos ??= 0;
+  return dados;
 }
 
 function salvarDados(dados) {

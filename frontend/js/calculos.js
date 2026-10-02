@@ -35,37 +35,50 @@ function custoMaoDeObra(servico, dados) {
   return custoHora(dados) * (servico.minutos / 60);
 }
 
-function custoServico(servico, dados) {
-  return custoInsumosServico(servico, dados) + custoMaoDeObra(servico, dados);
-}
-
 // Markup divisor. Retorna null quando os percentuais somam 100% ou mais.
 function precoSugerido(custo, margem, impostos, taxaCartao) {
   const divisor = 1 - (margem + impostos + taxaCartao) / 100;
   return divisor > 0 ? custo / divisor : null;
 }
 
-// Resultado completo de um serviço, com os percentuais informados (ou os da configuração).
-function analisarServico(servico, dados, percentuais = dados.configuracao) {
-  const { margem, impostos, taxaCartao } = percentuais;
+// Maior desconto (%) que mantém o preço igual ou acima do preço mínimo.
+function descontoMaximo(preco, precoMinimo) {
+  return ((preco - precoMinimo) / preco) * 100;
+}
+
+// Margem de lucro (%) que sobra ao cobrar um preço qualquer (ex.: com desconto).
+function margemEfetiva(custo, preco, impostos, taxaCartao) {
+  return (1 - custo / preco) * 100 - impostos - taxaCartao;
+}
+
+// Resultado completo de um serviço, com a configuração atual.
+function analisarServico(servico, dados) {
+  const { margem, impostos, taxaCartao, incluirMaoDeObra, margemMinima } = dados.configuracao;
   const insumos = custoInsumosServico(servico, dados);
-  const maoDeObra = custoMaoDeObra(servico, dados);
-  const custo = insumos + maoDeObra;
+  const custosMiudos = servico.custosMiudos || 0;
+  const maoDeObra = incluirMaoDeObra ? custoMaoDeObra(servico, dados) : 0;
+  const custo = insumos + custosMiudos + maoDeObra;
   const preco = precoSugerido(custo, margem, impostos, taxaCartao);
   const capacidade = Math.floor((horasProdutivas(dados) * 60) / servico.minutos);
 
   if (preco === null) {
-    return { insumos, maoDeObra, custo, preco: null, capacidade };
+    return { insumos, custosMiudos, maoDeObra, custo, preco: null, capacidade };
   }
 
   const impostosETaxas = preco * ((impostos + taxaCartao) / 100);
-  const custoVariavel = insumos + impostosETaxas;
+  const custoVariavel = insumos + custosMiudos + impostosETaxas;
   const margemContribuicao = preco - custoVariavel;
-  const pontoEquilibrio = Math.ceil(custoMensalTotal(dados) / margemContribuicao);
+  // Com margem zero ou negativa no modo simples, o preço nunca paga os custos fixos.
+  const pontoEquilibrio = margemContribuicao > 0
+    ? Math.ceil(custoMensalTotal(dados) / margemContribuicao)
+    : null;
   const lucro = preco * (margem / 100);
 
+  const precoMinimo = precoSugerido(custo, margemMinima, impostos, taxaCartao);
+  const desconto = precoMinimo === null ? null : descontoMaximo(preco, precoMinimo);
+
   return {
-    insumos, maoDeObra, custo, preco, impostosETaxas, custoVariavel,
-    margemContribuicao, pontoEquilibrio, capacidade, lucro,
+    insumos, custosMiudos, maoDeObra, custo, preco, impostosETaxas, custoVariavel,
+    margemContribuicao, pontoEquilibrio, capacidade, lucro, precoMinimo, desconto,
   };
 }

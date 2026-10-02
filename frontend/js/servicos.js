@@ -28,7 +28,16 @@ function montarLista() {
               </button>
             </div>
             <div class="linha-composicao small"><span>Insumos</span><span>${moeda(a.insumos)}</span></div>
-            <div class="linha-composicao small"><span>Mão de obra (${s.minutos} min)</span><span>${moeda(a.maoDeObra)}</span></div>
+            <div class="linha-composicao small align-items-center">
+              <label for="miudos-${s.id}">Custos miúdos</label>
+              <div class="input-group input-group-sm" style="width: 7.5rem">
+                <span class="input-group-text">R$</span>
+                <input class="form-control text-end" type="number" min="0" step="0.5" id="miudos-${s.id}"
+                       value="${s.custosMiudos}" onchange="alterarCustosMiudos(${s.id}, this.value)">
+              </div>
+            </div>
+            <div class="linha-composicao small"><span>Mão de obra (${s.minutos} min)</span>
+              <span>${dados.configuracao.incluirMaoDeObra ? moeda(a.maoDeObra) : '<span class="text-secondary">não incluída</span>'}</span></div>
             <div class="linha-composicao fw-semibold"><span>Custo total</span><span>${moeda(a.custo)}</span></div>
             <details class="small mt-2">
               <summary class="text-secondary">Ver insumos (${s.insumos.length})</summary>
@@ -47,6 +56,13 @@ function montarLista() {
 
   document.getElementById("lista-servicos").innerHTML = cartoes.join("") ||
     `<div class="col-12 text-secondary">Nenhum serviço cadastrado.</div>`;
+}
+
+function alterarCustosMiudos(id, valor) {
+  const servico = dados.servicos.find((s) => s.id === id);
+  servico.custosMiudos = Math.max(0, Number(valor) || 0);
+  salvarDados(dados);
+  montarLista();
 }
 
 function removerServico(id) {
@@ -89,6 +105,7 @@ function iniciar() {
       id: proximoId(dados.servicos),
       nome: document.getElementById("servico-nome").value.trim(),
       minutos: Number(document.getElementById("servico-minutos").value),
+      custosMiudos: Number(document.getElementById("servico-miudos").value) || 0,
       insumos,
     });
     salvarDados(dados);

@@ -22,12 +22,18 @@
         <div class="card mb-3">
           <div class="card-body">
             <label class="form-label fw-semibold" for="servico">Serviço</label>
-            <select class="form-select mb-4" id="servico"></select>
+            <select class="form-select mb-3" id="servico"></select>
+
+            <div class="form-check form-switch mb-1">
+              <input class="form-check-input" type="checkbox" role="switch" id="incluirMaoDeObra">
+              <label class="form-check-label" for="incluirMaoDeObra">Incluir hora de trabalho</label>
+            </div>
+            <div class="form-text mb-4" id="ajuda-modo"></div>
 
             <label class="form-label small d-flex justify-content-between" for="margem">
               <span>Margem de lucro</span><strong id="margem-valor"></strong>
             </label>
-            <input class="form-range mb-3" type="range" min="0" max="60" step="1" id="margem">
+            <input class="form-range mb-3" type="range" min="0" max="90" step="1" id="margem">
 
             <label class="form-label small d-flex justify-content-between" for="impostos">
               <span>Impostos sobre a venda</span><strong id="impostos-valor"></strong>
@@ -52,6 +58,31 @@
             <div class="small mt-2" id="comparacao"></div>
           </div>
         </div>
+
+        <div class="card mt-3">
+          <div class="card-body">
+            <h2 class="h6 fw-semibold mb-3">Quanto posso dar de desconto?</h2>
+
+            <label class="form-label small d-flex justify-content-between" for="margemMinima">
+              <span>Menor lucro que aceito</span><strong id="margemMinima-valor"></strong>
+            </label>
+            <input class="form-range" type="range" min="-50" max="50" step="1" id="margemMinima">
+            <div class="form-text mb-3">
+              Abaixo de 0% é prejuízo, que pode valer a pena numa troca de produtos ou serviços.
+              <span id="aviso-desconto-simples"></span>
+            </div>
+
+            <div class="linha-composicao"><span>Preço mínimo</span><strong id="d-preco-minimo"></strong></div>
+            <div class="linha-composicao"><span>Desconto máximo</span><strong id="d-desconto"></strong></div>
+
+            <label class="form-label small mt-3" for="desconto-simulado">Simular um desconto</label>
+            <div class="input-group">
+              <input class="form-control" type="number" min="0" max="100" step="1" id="desconto-simulado" placeholder="Ex.: 10">
+              <span class="input-group-text">%</span>
+            </div>
+            <div class="small mt-2" id="d-simulacao"></div>
+          </div>
+        </div>
       </div>
 
       <div class="col-lg-8">
@@ -65,6 +96,7 @@
               </div>
               <div class="col-md-7">
                 <div class="linha-composicao"><span>Insumos</span><span id="c-insumos"></span></div>
+                <div class="linha-composicao"><span>Custos miúdos</span><span id="c-miudos"></span></div>
                 <div class="linha-composicao"><span>Mão de obra <span class="text-secondary" id="c-tempo"></span></span><span id="c-mao"></span></div>
                 <div class="linha-composicao fw-semibold"><span>Custo do serviço</span><span id="c-custo"></span></div>
                 <div class="linha-composicao"><span>Impostos e taxas</span><span id="c-taxas"></span></div>
