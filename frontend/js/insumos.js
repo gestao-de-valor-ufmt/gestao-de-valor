@@ -1,4 +1,4 @@
-// Página de insumos: materiais e custo por uso.
+// Página de materiais: o que se compra para os atendimentos e quanto custa cada uso.
 
 const dados = carregarDados();
 
@@ -19,12 +19,12 @@ function montarTabela() {
           <i class="bi bi-trash"></i>
         </button>
       </td>
-    </tr>`).join("") || `<tr><td colspan="6" class="text-secondary">Nenhum insumo cadastrado.</td></tr>`;
+    </tr>`).join("") || `<tr><td colspan="6" class="text-secondary">Nenhum material cadastrado.</td></tr>`;
 }
 
 function removerInsumo(id) {
   if (insumoEmUso(id)) {
-    alert("Este insumo é usado em algum serviço. Remova-o da ficha técnica antes.");
+    alert("Este material é usado em algum serviço. Remova-o do serviço antes.");
     return;
   }
   dados.insumos = dados.insumos.filter((i) => i.id !== id);

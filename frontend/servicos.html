@@ -16,8 +16,8 @@
   <main class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
       <div>
-        <h1 class="h3 titulo-pagina">Serviços (ficha técnica)</h1>
-        <p class="text-secondary mb-0">O seu "cardápio": o que cada serviço consome de material e de tempo.</p>
+        <h1 class="h3 titulo-pagina">Serviços</h1>
+        <p class="text-secondary mb-0">O seu "cardápio": o que cada serviço gasta, quanto tempo leva e quanto você cobra.</p>
       </div>
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-servico">
         <i class="bi bi-plus-lg me-1"></i>Novo serviço
@@ -36,27 +36,29 @@
         </div>
         <div class="modal-body">
           <div class="row g-3 mb-3">
-            <div class="col-md-6">
+            <div class="col-md-8">
               <label class="form-label" for="servico-nome">Nome do serviço</label>
               <input class="form-control" id="servico-nome" required placeholder="Ex.: Spa dos pés">
             </div>
-            <div class="col-6 col-md-3">
+            <div class="col-md-4">
               <label class="form-label" for="servico-minutos">Tempo (minutos)</label>
               <input class="form-control" id="servico-minutos" type="number" min="5" step="5" required>
+              <div class="form-text">Contando o deslocamento.</div>
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label" for="servico-miudos">Custos miúdos (R$)</label>
-              <input class="form-control" id="servico-miudos" type="number" min="0" step="0.5" value="0">
+            <div class="col-6">
+              <label class="form-label" for="servico-outros">Deslocamento e outros gastos (R$)</label>
+              <input class="form-control" id="servico-outros" type="number" min="0" step="0.5" value="0">
+              <div class="form-text">Gasolina, passagem, gás, detergente…</div>
             </div>
-            <div class="col-12 form-text mt-1">
-              Custos miúdos: gastos pequenos e difíceis de medir em cada atendimento, como gás, detergente
-              ou combustível para buscar material.
+            <div class="col-6">
+              <label class="form-label" for="servico-preco">Quanto você cobra (R$)</label>
+              <input class="form-control" id="servico-preco" type="number" min="0" step="1" value="0">
             </div>
           </div>
           <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="form-label mb-0">Insumos usados</span>
+            <span class="form-label mb-0">Material usado</span>
             <button type="button" class="btn btn-outline-secondary btn-sm" id="adicionar-linha">
-              <i class="bi bi-plus-lg me-1"></i>Adicionar insumo
+              <i class="bi bi-plus-lg me-1"></i>Adicionar material
             </button>
           </div>
           <div id="linhas-insumos" class="vstack gap-2"></div>

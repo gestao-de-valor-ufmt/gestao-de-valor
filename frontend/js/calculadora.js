@@ -1,7 +1,7 @@
-// Calculadora: preço sugerido, composição, ponto de equilíbrio e desconto máximo de um serviço.
+// Calculadora: 4 perguntas → quanto cobrar, quantos atendimentos e quanto dá de desconto.
 
 const dados = carregarDados();
-const PERCENTUAIS = ["margem", "impostos", "taxaCartao", "margemMinima"];
+const CAMPOS_SERVICO = ["outrosGastos", "minutos", "precoCobrado"];
 let grafico = null;
 
 function texto(id, valor) {
@@ -13,168 +13,125 @@ function servicoSelecionado() {
   return dados.servicos.find((s) => s.id === id);
 }
 
-function calcular() {
+// Preenche os campos com os valores salvos do serviço escolhido.
+function preencherCampos() {
   const servico = servicoSelecionado();
-  if (!servico) return;
-  const config = dados.configuracao;
-
-  for (const campo of PERCENTUAIS) {
-    const casas = campo === "impostos" || campo === "taxaCartao" ? 1 : 0;
-    texto(`${campo}-valor`, `${numero(config[campo], casas)}%`);
+  document.getElementById("salario").value = dados.configuracao.salario;
+  for (const campo of CAMPOS_SERVICO) {
+    document.getElementById(campo).value = servico[campo] ?? 0;
   }
-  texto("ajuda-modo", config.incluirMaoDeObra
-    ? "Preço = insumos + custos miúdos + seu tempo (contas fixas e salário) + margem."
-    : "Modo simples: preço = insumos + custos miúdos + margem. Veja abaixo se a margem paga as contas e o seu salário.");
-
-  const a = analisarServico(servico, dados);
-
-  texto("c-insumos", moeda(a.insumos));
-  texto("c-miudos", moeda(a.custosMiudos));
-  texto("c-tempo", `(${servico.minutos} min)`);
-  texto("c-mao", config.incluirMaoDeObra ? moeda(a.maoDeObra) : "não incluída");
-  texto("c-custo", moeda(a.custo));
-
-  if (a.preco === null) {
-    texto("preco", "—");
-    texto("lucro", "Margem + impostos + taxas não podem somar 100% ou mais.");
-    for (const id of ["c-taxas", "c-lucro", "texto-equilibrio", "texto-capacidade", "comparacao",
-                      "d-preco-minimo", "d-desconto", "d-simulacao"]) texto(id, "");
-    document.getElementById("barra-preenchimento").style.width = "0";
-    grafico = desenharGraficoEquilibrio(document.getElementById("grafico"), grafico, dados, a);
-    return;
-  }
-
-  texto("preco", moeda(a.preco));
-  texto("lucro", config.incluirMaoDeObra
-    ? `Você lucra ${moeda(a.lucro)} por atendimento`
-    : `Sobram ${moeda(a.lucro)} por atendimento para pagar contas, salário e lucro`);
-  texto("aviso-desconto-simples", config.incluirMaoDeObra
-    ? ""
-    : "No modo simples, o preço mínimo cobre só material e custos miúdos, não as contas fixas.");
-  texto("c-taxas", moeda(a.impostosETaxas));
-  texto("c-lucro", moeda(a.lucro));
-
-  mostrarEquilibrio(servico, a);
-  mostrarDesconto(a);
-  compararPrecoAtual(a);
-  grafico = desenharGraficoEquilibrio(document.getElementById("grafico"), grafico, dados, a);
 }
 
-function mostrarEquilibrio(servico, a) {
-  const barra = document.getElementById("barra-preenchimento");
+function calcular() {
+  const servico = servicoSelecionado();
+  if (!servico || !(servico.minutos > 0)) return;
+  const a = analisarServico(servico, dados);
+  const contas = totalContasFixas(dados) + (dados.configuracao.reserva || 0);
 
-  if (a.pontoEquilibrio === null) {
-    document.getElementById("texto-equilibrio").innerHTML =
-      `Com esse preço, <strong>nenhuma quantidade</strong> de atendimentos paga as contas fixas e o seu salário.
-       Aumente a margem.`;
+  texto("ajuda-contas", contas > 0
+    ? `Mais ${moeda(contas)} de contas e reserva do mês, que você edita em "Seu mês".`
+    : `Sem contas fixas cadastradas. Se tiver, cadastre em "Seu mês".`);
+  texto("p-material", moeda(a.material));
+
+  // Cobre pelo menos
+  texto("preco-minimo", moeda(a.precoMinimo));
+  texto("c-material", moeda(a.material));
+  texto("c-outros", moeda(a.outrosGastos));
+  texto("c-tempo", `(${servico.minutos} min × ${moeda(valorDaHora(dados))}/h)`);
+  texto("c-parte", moeda(a.parteDaMeta));
+  document.getElementById("linha-taxa").hidden = !(dados.configuracao.taxaCartao > 0);
+  texto("c-taxa", moeda(a.taxaNoMinimo));
+
+  mostrarNecessarios(a);
+  grafico = desenharGraficoMeta(document.getElementById("grafico"), grafico, a);
+}
+
+function mostrarNecessarios(a) {
+  const barra = document.getElementById("barra-preenchimento");
+  const desconto = document.getElementById("texto-desconto");
+  texto("titulo-cobrando", `Cobrando ${moeda(a.preco)}`);
+
+  if (a.necessarios === null) {
+    texto("necessarios", "Não fecha a conta");
+    document.getElementById("texto-necessarios").innerHTML =
+      `${moeda(a.preco)} não paga nem os gastos do atendimento (${moeda(a.gasto)}). Cada cliente tira dinheiro do seu bolso.`;
     barra.style.width = "100%";
     barra.className = "progress-bar bg-danger";
     texto("texto-capacidade", "");
+    desconto.className = "alert alert-danger mb-0 py-2 small";
+    desconto.textContent = `Para pagar seu salário e suas contas, cobre pelo menos ${moeda(a.precoMinimo)}.`;
     return;
   }
 
-  document.getElementById("texto-equilibrio").innerHTML =
-    `Você precisa fazer <strong>${a.pontoEquilibrio} atendimentos</strong> de ${escapar(servico.nome)} no mês para cobrir
-     todos os custos e o seu salário. A partir daí, é lucro.`;
+  if (a.meta === 0) {
+    texto("necessarios", `Sobram ${moeda(a.sobra)} por cliente`);
+    document.getElementById("texto-necessarios").innerHTML =
+      `Você não definiu salário nem contas. Com 100 atendimentos no mês, sobrariam
+       <strong>${moeda(a.sobra * 100)}</strong>. Preencha a pergunta 1 para saber quantos clientes você precisa.`;
+    barra.style.width = "0";
+    texto("texto-capacidade", `Cabem ${a.capacidade} atendimentos desse serviço no seu mês.`);
+    desconto.className = "alert alert-secondary mb-0 py-2 small";
+    desconto.textContent = `Sem meta definida, qualquer preço acima de ${moeda(a.precoMinimo)} já deixa dinheiro no seu bolso.`;
+    return;
+  }
 
-  const uso = Math.min(100, (a.pontoEquilibrio / a.capacidade) * 100);
+  const porDia = a.necessarios / dados.configuracao.diasPorMes;
+  texto("necessarios", `${a.necessarios} atendimentos por mês`);
+  document.getElementById("texto-necessarios").innerHTML =
+    `Sobram <strong>${moeda(a.sobra)}</strong> de cada cliente. Para chegar em ${moeda(a.meta)} no mês,
+     são cerca de <strong>${numero(porDia, 1)} por dia</strong> de trabalho.`;
+
+  const uso = Math.min(100, (a.necessarios / a.capacidade) * 100);
   barra.style.width = `${uso}%`;
-  barra.className = `progress-bar ${uso > 90 ? "bg-danger" : uso > 75 ? "bg-warning" : "bg-success"}`;
+  barra.className = `progress-bar ${uso >= 100 ? "bg-danger" : uso > 85 ? "bg-warning" : "bg-success"}`;
   document.getElementById("barra").setAttribute("aria-valuenow", Math.round(uso));
-  texto("texto-capacidade", uso >= 100
-    ? `Atenção: a meta passa da sua capacidade (${a.capacidade} atendimentos/mês). Reveja preço, custos ou tempo.`
-    : `Isso usa ${numero(uso)}% da sua capacidade de ${a.capacidade} atendimentos/mês.`);
-}
+  texto("texto-capacidade", a.necessarios > a.capacidade
+    ? `Só cabem ${a.capacidade} atendimentos no seu mês. Com esse preço, a meta não fecha.`
+    : `Cabem ${a.capacidade} atendimentos desse serviço no seu mês.`);
 
-function mostrarDesconto(a) {
-  const { impostos, taxaCartao, margemMinima } = dados.configuracao;
-
-  if (a.precoMinimo === null) {
-    texto("d-preco-minimo", "—");
-    texto("d-desconto", "—");
+  if (a.desconto >= 0.005) {
+    desconto.className = "alert alert-success mb-0 py-2 small";
+    desconto.innerHTML = `<i class="bi bi-tag me-1"></i>Você pode dar até <strong>${moeda(a.desconto)}</strong> de desconto,
+      cobrando no mínimo ${moeda(a.precoMinimo)}, sem mexer no seu salário.`;
   } else {
-    texto("d-preco-minimo", moeda(a.precoMinimo));
-    texto("d-desconto", a.desconto <= 0
-      ? "sem espaço para desconto"
-      : `até ${numero(a.desconto, 1)}% (${moeda(a.preco - a.precoMinimo)})`);
-  }
-
-  const saida = document.getElementById("d-simulacao");
-  const percentual = Number(document.getElementById("desconto-simulado").value);
-  if (!percentual || percentual <= 0 || percentual >= 100) {
-    saida.innerHTML = "";
-    return;
-  }
-
-  const precoComDesconto = a.preco * (1 - percentual / 100);
-  const margem = margemEfetiva(a.custo, precoComDesconto, impostos, taxaCartao);
-  const resultado = precoComDesconto * (margem / 100);
-  const dentroDoLimite = margem >= margemMinima - 1e-9;
-  const icone = dentroDoLimite ? "bi-check-circle" : "bi-x-circle";
-  const cor = dentroDoLimite ? "text-success" : "text-danger";
-  const efeito = resultado >= 0
-    ? `ainda sobra ${moeda(resultado)} de lucro (${numero(margem, 1)}%)`
-    : `você perde ${moeda(-resultado)} por atendimento (${numero(margem, 1)}%)`;
-
-  saida.innerHTML = `<span class="${cor}"><i class="bi ${icone} me-1"></i>
-    Cobrando ${moeda(precoComDesconto)}, ${efeito}.
-    ${dentroDoLimite ? "Dentro do seu limite." : "Abaixo do limite que você definiu."}</span>`;
-}
-
-function compararPrecoAtual(a) {
-  const atual = Number(document.getElementById("preco-atual").value);
-  const saida = document.getElementById("comparacao");
-  if (!atual) {
-    saida.innerHTML = "";
-    return;
-  }
-  const diferenca = atual - a.preco;
-  if (atual < a.custo) {
-    saida.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>
-      Você está pagando para trabalhar: o custo é ${moeda(a.custo)}.</span>`;
-  } else if (diferenca < 0) {
-    saida.innerHTML = `<span class="text-warning-emphasis"><i class="bi bi-arrow-down me-1"></i>
-      ${moeda(-diferenca)} abaixo do preço sugerido. Cobre os custos, mas com lucro menor.</span>`;
-  } else {
-    saida.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>
-      Seu preço está ${moeda(diferenca)} acima do sugerido.</span>`;
+    desconto.className = "alert alert-warning mb-0 py-2 small";
+    desconto.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Seu preço está <strong>${moeda(-a.desconto)}</strong>
+      abaixo do mínimo. Melhor não dar desconto.`;
   }
 }
 
 function iniciar() {
   const select = document.getElementById("servico");
-  select.innerHTML = dados.servicos.map((s) => `<option value="${s.id}">${escapar(s.nome)}</option>`).join("");
-
-  const pedido = new URLSearchParams(location.search).get("servico");
-  if (pedido && dados.servicos.some((s) => s.id === Number(pedido))) select.value = pedido;
-
-  for (const campo of PERCENTUAIS) {
-    const input = document.getElementById(campo);
-    input.value = dados.configuracao[campo];
-    input.addEventListener("input", () => {
-      dados.configuracao[campo] = Number(input.value);
-      salvarDados(dados);
-      calcular();
-    });
-  }
-
-  const modo = document.getElementById("incluirMaoDeObra");
-  modo.checked = dados.configuracao.incluirMaoDeObra;
-  modo.addEventListener("change", () => {
-    dados.configuracao.incluirMaoDeObra = modo.checked;
-    salvarDados(dados);
-    calcular();
-  });
-
-  select.addEventListener("change", calcular);
-  document.getElementById("preco-atual").addEventListener("input", calcular);
-  document.getElementById("desconto-simulado").addEventListener("input", calcular);
-
   if (!dados.servicos.length) {
     document.querySelector("main").insertAdjacentHTML("beforeend",
       `<p class="text-secondary">Cadastre um serviço primeiro em <a href="servicos.html">Serviços</a>.</p>`);
     return;
   }
+  select.innerHTML = dados.servicos.map((s) => `<option value="${s.id}">${escapar(s.nome)}</option>`).join("");
+
+  const pedido = new URLSearchParams(location.search).get("servico");
+  if (pedido && dados.servicos.some((s) => s.id === Number(pedido))) select.value = pedido;
+
+  select.addEventListener("change", () => {
+    preencherCampos();
+    calcular();
+  });
+
+  document.getElementById("salario").addEventListener("input", (e) => {
+    dados.configuracao.salario = Math.max(0, Number(e.target.value) || 0);
+    salvarDados(dados);
+    calcular();
+  });
+
+  for (const campo of CAMPOS_SERVICO) {
+    document.getElementById(campo).addEventListener("input", (e) => {
+      servicoSelecionado()[campo] = Math.max(0, Number(e.target.value) || 0);
+      salvarDados(dados);
+      calcular();
+    });
+  }
+
+  preencherCampos();
   calcular();
 }
 

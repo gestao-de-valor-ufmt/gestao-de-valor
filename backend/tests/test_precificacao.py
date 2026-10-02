@@ -1,6 +1,6 @@
 """Testes do motor de cálculo.
 
-O cenário de referência é a manicure do protótipo (frontend/js/dados.js).
+O cenário de referência é a manicure a domicílio do protótipo (frontend/js/dados.js).
 Os valores esperados batem com o que o protótipo mostra na tela.
 """
 
@@ -8,26 +8,27 @@ import pytest
 
 from app.core.precificacao import (
     arredondar_moeda,
+    atendimentos_necessarios,
     capacidade_mensal,
-    custo_hora,
-    custo_insumos,
-    custo_mao_de_obra,
+    custo_material,
     custo_por_uso,
-    custo_servico,
     desconto_maximo,
-    horas_produtivas,
-    margem_efetiva,
-    ponto_equilibrio,
-    preco_sugerido,
+    gasto_por_atendimento,
+    horas_de_atendimento,
+    meta_mensal,
+    parte_da_meta,
+    preco_minimo,
+    sobra_por_atendimento,
+    valor_da_hora,
 )
 
-# ---------- Cenário de referência: manicure ----------
+# ---------- Cenário de referência: manicure a domicílio ----------
 
-CUSTOS_FIXOS = 900 + 180 + 100 + 60 + 60 + 75.90 + 90 + 150 + 100  # R$ 1.715,90
-PRO_LABORE = 3000
+CONTAS_FIXAS = 80 + 75.90 + 30  # celular e internet, DAS MEI, reposição de equipamentos
+SALARIO = 2500
 
 # (preço da embalagem, rendimento, quantidade usada na manicure)
-INSUMOS_MANICURE = [
+MATERIAL_MANICURE = [
     (12, 20, 1),   # esmalte
     (18, 30, 1),   # base fortalecedora
     (15, 30, 1),   # extra brilho
@@ -41,44 +42,74 @@ INSUMOS_MANICURE = [
 
 
 def test_cenario_completo_manicure():
-    horas = horas_produtivas(dias_por_mes=22, horas_por_dia=6, produtividade=75)
-    hora = custo_hora(CUSTOS_FIXOS, PRO_LABORE, horas)
-    insumos = custo_insumos([(custo_por_uso(p, r), q) for p, r, q in INSUMOS_MANICURE])
-    custo = insumos + custo_mao_de_obra(hora, minutos=40)
-    preco = preco_sugerido(custo, margem=20, impostos=0, taxa_cartao=4)
+    meta = meta_mensal(SALARIO, CONTAS_FIXAS)
+    horas = horas_de_atendimento(dias_por_mes=22, horas_por_dia=6)
+    material = custo_material([(custo_por_uso(p, r), q) for p, r, q in MATERIAL_MANICURE])
+    gasto = gasto_por_atendimento(material, outros_gastos=2)  # R$ 2 de deslocamento
+    parte = parte_da_meta(meta, horas, minutos=60)
+    minimo = preco_minimo(gasto, parte)
 
-    assert horas == pytest.approx(99)
-    assert arredondar_moeda(hora) == 47.64
-    assert arredondar_moeda(insumos) == 3.72
-    assert arredondar_moeda(custo) == 35.48
-    assert arredondar_moeda(preco) == 46.68
-    assert ponto_equilibrio(CUSTOS_FIXOS + PRO_LABORE, preco, insumos, impostos=0, taxa_cartao=4) == 115
-    assert capacidade_mensal(horas, minutos_por_servico=40) == 148
+    assert meta == pytest.approx(2685.90)
+    assert horas == 132
+    assert arredondar_moeda(valor_da_hora(meta, horas)) == 20.35
+    assert arredondar_moeda(material) == 3.72
+    assert arredondar_moeda(gasto) == 5.72
+    assert arredondar_moeda(minimo) == 26.07
+    assert capacidade_mensal(horas, 60) == 132
 
-    # Desconto máximo sem ter prejuízo (margem mínima de 0%)
-    preco_minimo = preco_sugerido(custo, margem=0, impostos=0, taxa_cartao=4)
-    assert arredondar_moeda(preco_minimo) == 36.96
-    assert round(desconto_maximo(preco, preco_minimo), 2) == 20.83
+    # Cobrando R$ 40, como no exemplo do protótipo
+    sobra = sobra_por_atendimento(40, gasto)
+    assert arredondar_moeda(sobra) == 34.28
+    assert atendimentos_necessarios(meta, sobra) == 79
+    assert arredondar_moeda(desconto_maximo(40, minimo)) == 13.93
 
 
-def test_cenario_modo_simples_manicure():
-    """Modo simples: insumos + custos miúdos + margem, sem hora de trabalho.
+def test_caso_real_sem_contas_nem_salario():
+    """Manicure que gasta R$ 10, cobra R$ 50 e não definiu salário nem contas.
 
-    O preço fica bem menor, mas o ponto de equilíbrio mostra que a agenda
-    não comporta os atendimentos necessários para pagar as contas e o salário.
+    Cada atendimento deixa R$ 40; com 100 atendimentos, sobram R$ 4.000.
     """
-    horas = horas_produtivas(22, 6, 75)
-    insumos = custo_insumos([(custo_por_uso(p, r), q) for p, r, q in INSUMOS_MANICURE])
-    custo = custo_servico(insumos, custos_miudos=2)
-    preco = preco_sugerido(custo, margem=60, impostos=0, taxa_cartao=4)
+    sobra = sobra_por_atendimento(50, 10)
+    assert sobra == 40
+    assert 100 * sobra == 4000
+    assert atendimentos_necessarios(meta_mensal(0), sobra) == 0
 
-    assert arredondar_moeda(preco) == 15.89
-    equilibrio = ponto_equilibrio(CUSTOS_FIXOS + PRO_LABORE, preco, insumos + 2, 0, 4)
-    assert equilibrio == 495
-    assert equilibrio > capacidade_mensal(horas, 40)
+
+def test_cobrando_o_minimo_precisa_lotar_a_agenda():
+    """No preço mínimo, os atendimentos necessários são exatamente os que cabem no mês."""
+    meta = meta_mensal(SALARIO, CONTAS_FIXAS)
+    horas = horas_de_atendimento(22, 6)
+    gasto = 5.72
+    minimo = preco_minimo(gasto, parte_da_meta(meta, horas, 60), taxa_cartao=4)
+    sobra = sobra_por_atendimento(minimo, gasto, taxa_cartao=4)
+    assert atendimentos_necessarios(meta, sobra) == capacidade_mensal(horas, 60)
 
 
 # ---------- Fórmula por fórmula ----------
+
+def test_meta_mensal():
+    assert meta_mensal(2000) == 2000
+    assert meta_mensal(2000, contas_fixas=300, reserva=100) == 2400
+
+
+def test_meta_mensal_negativa():
+    with pytest.raises(ValueError):
+        meta_mensal(-1)
+
+
+def test_horas_de_atendimento():
+    assert horas_de_atendimento(20, 8) == 160
+
+
+@pytest.mark.parametrize("dias, horas", [(0, 8), (20, 0), (-1, 8)])
+def test_horas_de_atendimento_invalidas(dias, horas):
+    with pytest.raises(ValueError):
+        horas_de_atendimento(dias, horas)
+
+
+def test_valor_da_hora():
+    assert valor_da_hora(3000, 100) == 30
+
 
 def test_custo_por_uso():
     assert custo_por_uso(12, 20) == pytest.approx(0.60)
@@ -89,114 +120,63 @@ def test_custo_por_uso_rendimento_zero():
         custo_por_uso(12, 0)
 
 
-def test_horas_produtivas():
-    assert horas_produtivas(20, 8, 100) == pytest.approx(160)
-    assert horas_produtivas(20, 8, 50) == pytest.approx(80)
+def test_custo_material():
+    assert custo_material([(0.60, 1), (0.08, 2)]) == pytest.approx(0.76)
+    assert custo_material([]) == 0
 
 
-@pytest.mark.parametrize("produtividade", [0, -10, 101])
-def test_horas_produtivas_percentual_invalido(produtividade):
+def test_gasto_por_atendimento():
+    assert gasto_por_atendimento(10) == 10
+    assert gasto_por_atendimento(10, outros_gastos=2) == 12
+
+
+def test_gasto_negativo():
     with pytest.raises(ValueError):
-        horas_produtivas(22, 6, produtividade)
+        gasto_por_atendimento(10, outros_gastos=-2)
 
 
-def test_custo_hora():
-    assert custo_hora(1000, 3000, 100) == pytest.approx(40)
+def test_parte_da_meta_proporcional_ao_tempo():
+    # Meta de R$ 3.000 em 100 h → R$ 30 por hora
+    assert parte_da_meta(3000, 100, 60) == pytest.approx(30)
+    assert parte_da_meta(3000, 100, 120) == pytest.approx(60)
 
 
-def test_custo_hora_sem_horas():
+def test_preco_minimo_sem_taxa():
+    assert preco_minimo(10, 20) == 30
+
+
+def test_preco_minimo_com_taxa_da_maquininha():
+    # Com 4% de taxa, R$ 30 líquidos exigem cobrar R$ 31,25
+    assert preco_minimo(10, 20, taxa_cartao=4) == pytest.approx(31.25)
+
+
+@pytest.mark.parametrize("taxa", [-1, 100, 150])
+def test_preco_minimo_taxa_invalida(taxa):
     with pytest.raises(ValueError):
-        custo_hora(1000, 3000, 0)
+        preco_minimo(10, 20, taxa)
 
 
-def test_custo_insumos():
-    assert custo_insumos([(0.60, 1), (0.08, 2)]) == pytest.approx(0.76)
-    assert custo_insumos([]) == 0
+def test_sobra_por_atendimento_com_taxa():
+    assert sobra_por_atendimento(31.25, 10, taxa_cartao=4) == pytest.approx(20)
 
 
-def test_custo_mao_de_obra():
-    assert custo_mao_de_obra(60, 30) == pytest.approx(30)
+def test_atendimentos_necessarios_arredonda_para_cima():
+    # R$ 1.000 ÷ R$ 30 = 33,3 → precisa de 34 atendimentos
+    assert atendimentos_necessarios(1000, 30) == 34
 
 
-def test_preco_sugerido_markup_divisor():
-    # Exemplo de docs/formulas.md: custo R$ 30, 20% + 6% + 4% = 30% → 30 / 0,70
-    assert arredondar_moeda(preco_sugerido(30, 20, 6, 4)) == 42.86
-
-
-def test_preco_sugerido_sem_percentuais_e_o_proprio_custo():
-    assert preco_sugerido(30, 0, 0, 0) == pytest.approx(30)
-
-
-def test_preco_sugerido_percentuais_100_ou_mais():
+def test_atendimentos_necessarios_preco_nao_cobre_gastos():
     with pytest.raises(ValueError):
-        preco_sugerido(30, 60, 30, 10)
-
-
-def test_preco_sugerido_aceita_margem_negativa():
-    # Margem de -50%: o preço cobre só 2/3 do custo (ex.: troca de serviços)
-    assert preco_sugerido(30, -50, 0, 0) == pytest.approx(20)
-
-
-def test_preco_sugerido_taxa_negativa():
-    with pytest.raises(ValueError):
-        preco_sugerido(30, 20, -1, 0)
-
-
-def test_custo_servico_modos():
-    assert custo_servico(10) == 10
-    assert custo_servico(10, custos_miudos=2) == 12
-    assert custo_servico(10, custos_miudos=2, mao_de_obra=30) == 42
-
-
-def test_custo_servico_componente_negativo():
-    with pytest.raises(ValueError):
-        custo_servico(10, custos_miudos=-2)
+        atendimentos_necessarios(1000, 0)
 
 
 def test_desconto_maximo():
-    # Preço R$ 50, mínimo R$ 40 → dá para descontar até 20%
-    assert desconto_maximo(50, 40) == pytest.approx(20)
-
-
-def test_desconto_maximo_negativo_quando_preco_abaixo_do_minimo():
-    assert desconto_maximo(40, 50) == pytest.approx(-25)
-
-
-def test_desconto_maximo_com_margem_minima_negativa():
-    # Aceitando até 10% de prejuízo, o desconto pode passar da margem de lucro
-    custo = 30
-    preco = preco_sugerido(custo, 20, 0, 0)        # R$ 37,50
-    minimo = preco_sugerido(custo, -10, 0, 0)      # R$ 27,27
-    assert desconto_maximo(preco, minimo) > 20
-
-
-def test_margem_efetiva_e_o_inverso_do_preco_sugerido():
-    preco = preco_sugerido(35.48, 20, 0, 4)
-    assert margem_efetiva(35.48, preco, 0, 4) == pytest.approx(20)
-
-
-def test_margem_efetiva_com_desconto():
-    # Custo R$ 30 vendido a R$ 30 com 4% de taxa → prejuízo de 4%
-    assert margem_efetiva(30, 30, 0, 4) == pytest.approx(-4)
-
-
-def test_ponto_equilibrio():
-    # Custos de R$ 1.000, preço R$ 30, insumos R$ 10, sem taxas → sobra R$ 20 por atendimento
-    assert ponto_equilibrio(1000, 30, 10, 0, 0) == 50
-
-
-def test_ponto_equilibrio_arredonda_para_cima():
-    # 1000 / 30 = 33,3 → precisa de 34 atendimentos
-    assert ponto_equilibrio(1000, 40, 10, 0, 0) == 34
-
-
-def test_ponto_equilibrio_preco_nao_cobre_custo_variavel():
-    with pytest.raises(ValueError):
-        ponto_equilibrio(1000, 10, 10, 0, 0)
+    assert desconto_maximo(50, 40) == 10
+    assert desconto_maximo(40, 50) == -10  # preço já abaixo do mínimo
 
 
 def test_capacidade_mensal():
-    assert capacidade_mensal(99, 40) == 148  # 148,5 → só cabem 148 inteiros
+    assert capacidade_mensal(132, 50) == 158  # 158,4 → só cabem 158 inteiros
 
 
 # ---------- Precisão numérica (ver docs/formulas.md) ----------
@@ -218,6 +198,6 @@ def test_capacidade_nao_perde_atendimento_por_residuo():
     assert capacidade_mensal(8.2, 6) == 82
 
 
-def test_ponto_equilibrio_nao_ganha_atendimento_por_residuo():
+def test_atendimentos_nao_ganham_atendimento_por_residuo():
     # 0,9 / 0,03 deveria dar 30, mas o float calcula 30,000000000000004
-    assert ponto_equilibrio(0.9, 0.03, 0, 0, 0) == 30
+    assert atendimentos_necessarios(0.9, 0.03) == 30

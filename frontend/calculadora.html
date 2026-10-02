@@ -15,106 +15,95 @@
 
   <main class="container py-4">
     <h1 class="h3 titulo-pagina">Calculadora de preço</h1>
-    <p class="text-secondary mb-4">Escolha um serviço, ajuste os percentuais e veja o preço ideal na hora.</p>
+    <p class="text-secondary mb-4">Responda 4 perguntas e descubra quanto cobrar e quantos clientes você precisa.</p>
 
     <div class="row g-3">
-      <div class="col-lg-4">
-        <div class="card mb-3">
-          <div class="card-body">
-            <label class="form-label fw-semibold" for="servico">Serviço</label>
-            <select class="form-select mb-3" id="servico"></select>
-
-            <div class="form-check form-switch mb-1">
-              <input class="form-check-input" type="checkbox" role="switch" id="incluirMaoDeObra">
-              <label class="form-check-label" for="incluirMaoDeObra">Incluir hora de trabalho</label>
-            </div>
-            <div class="form-text mb-4" id="ajuda-modo"></div>
-
-            <label class="form-label small d-flex justify-content-between" for="margem">
-              <span>Margem de lucro</span><strong id="margem-valor"></strong>
-            </label>
-            <input class="form-range mb-3" type="range" min="0" max="90" step="1" id="margem">
-
-            <label class="form-label small d-flex justify-content-between" for="impostos">
-              <span>Impostos sobre a venda</span><strong id="impostos-valor"></strong>
-            </label>
-            <input class="form-range" type="range" min="0" max="20" step="0.5" id="impostos">
-            <div class="form-text mb-3">MEI normalmente deixa 0%: o DAS já está nos custos fixos.</div>
-
-            <label class="form-label small d-flex justify-content-between" for="taxaCartao">
-              <span>Taxa da maquininha</span><strong id="taxaCartao-valor"></strong>
-            </label>
-            <input class="form-range" type="range" min="0" max="10" step="0.1" id="taxaCartao">
-          </div>
-        </div>
-
+      <div class="col-lg-5">
         <div class="card">
-          <div class="card-body">
-            <label class="form-label fw-semibold" for="preco-atual">Quanto você cobra hoje?</label>
-            <div class="input-group">
-              <span class="input-group-text">R$</span>
-              <input class="form-control" type="number" min="0" step="0.5" id="preco-atual" placeholder="Opcional">
-            </div>
-            <div class="small mt-2" id="comparacao"></div>
-          </div>
-        </div>
-
-        <div class="card mt-3">
-          <div class="card-body">
-            <h2 class="h6 fw-semibold mb-3">Quanto posso dar de desconto?</h2>
-
-            <label class="form-label small d-flex justify-content-between" for="margemMinima">
-              <span>Menor lucro que aceito</span><strong id="margemMinima-valor"></strong>
-            </label>
-            <input class="form-range" type="range" min="-50" max="50" step="1" id="margemMinima">
-            <div class="form-text mb-3">
-              Abaixo de 0% é prejuízo, que pode valer a pena numa troca de produtos ou serviços.
-              <span id="aviso-desconto-simples"></span>
+          <div class="card-body vstack gap-4">
+            <div>
+              <label class="form-label fw-semibold" for="servico">Qual serviço?</label>
+              <select class="form-select" id="servico"></select>
             </div>
 
-            <div class="linha-composicao"><span>Preço mínimo</span><strong id="d-preco-minimo"></strong></div>
-            <div class="linha-composicao"><span>Desconto máximo</span><strong id="d-desconto"></strong></div>
-
-            <label class="form-label small mt-3" for="desconto-simulado">Simular um desconto</label>
-            <div class="input-group">
-              <input class="form-control" type="number" min="0" max="100" step="1" id="desconto-simulado" placeholder="Ex.: 10">
-              <span class="input-group-text">%</span>
+            <div>
+              <label class="form-label fw-semibold" for="salario">
+                <span class="numero-pergunta">1</span>Quanto você quer ganhar por mês?
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input class="form-control" type="number" min="0" step="50" id="salario">
+              </div>
+              <div class="form-text" id="ajuda-contas"></div>
             </div>
-            <div class="small mt-2" id="d-simulacao"></div>
+
+            <div>
+              <span class="form-label fw-semibold d-block">
+                <span class="numero-pergunta">2</span>Quanto você gasta em cada atendimento?
+              </span>
+              <div class="linha-composicao small"><span>Material <span class="text-secondary">(da ficha do serviço)</span></span><span id="p-material"></span></div>
+              <label class="form-label small mt-2" for="outrosGastos">Deslocamento e outros gastos</label>
+              <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input class="form-control" type="number" min="0" step="0.5" id="outrosGastos">
+              </div>
+              <div class="form-text">Gasolina, passagem, gás, detergente…</div>
+            </div>
+
+            <div>
+              <label class="form-label fw-semibold" for="minutos">
+                <span class="numero-pergunta">3</span>Quanto tempo leva cada atendimento?
+              </label>
+              <div class="input-group">
+                <input class="form-control" type="number" min="5" step="5" id="minutos">
+                <span class="input-group-text">minutos</span>
+              </div>
+              <div class="form-text">Contando o deslocamento até o cliente.</div>
+            </div>
+
+            <div>
+              <label class="form-label fw-semibold" for="precoCobrado">
+                <span class="numero-pergunta">4</span>Quanto você cobra hoje?
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input class="form-control" type="number" min="0" step="1" id="precoCobrado">
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-8">
-        <div class="card mb-3">
+      <div class="col-lg-7 vstack gap-3">
+        <div class="card">
           <div class="card-body">
-            <div class="row g-4 align-items-center">
-              <div class="col-md-5 text-center text-md-start">
-                <div class="small text-secondary">Preço sugerido</div>
-                <div class="preco-destaque" id="preco"></div>
-                <div class="small text-secondary mt-1" id="lucro"></div>
-              </div>
-              <div class="col-md-7">
-                <div class="linha-composicao"><span>Insumos</span><span id="c-insumos"></span></div>
-                <div class="linha-composicao"><span>Custos miúdos</span><span id="c-miudos"></span></div>
-                <div class="linha-composicao"><span>Mão de obra <span class="text-secondary" id="c-tempo"></span></span><span id="c-mao"></span></div>
-                <div class="linha-composicao fw-semibold"><span>Custo do serviço</span><span id="c-custo"></span></div>
-                <div class="linha-composicao"><span>Impostos e taxas</span><span id="c-taxas"></span></div>
-                <div class="linha-composicao"><span>Lucro</span><span id="c-lucro"></span></div>
-              </div>
-            </div>
+            <div class="small text-secondary"><i class="bi bi-cash-coin me-1"></i>Cobre pelo menos</div>
+            <div class="preco-destaque mb-3" id="preco-minimo"></div>
+            <div class="linha-composicao"><span>Material</span><span id="c-material"></span></div>
+            <div class="linha-composicao"><span>Deslocamento e outros gastos</span><span id="c-outros"></span></div>
+            <div class="linha-composicao"><span>Parte do seu salário e contas <span class="text-secondary" id="c-tempo"></span></span><span id="c-parte"></span></div>
+            <div class="linha-composicao" id="linha-taxa"><span>Taxa da maquininha</span><span id="c-taxa"></span></div>
           </div>
         </div>
 
         <div class="card">
           <div class="card-body">
-            <h2 class="h6 fw-semibold">Ponto de equilíbrio</h2>
-            <p class="small mb-2" id="texto-equilibrio"></p>
-            <div class="progress barra-capacidade mb-1" role="progressbar" aria-label="Uso da capacidade" id="barra">
+            <div class="small text-secondary"><i class="bi bi-calendar-check me-1"></i><span id="titulo-cobrando"></span></div>
+            <div class="preco-destaque mb-1" id="necessarios"></div>
+            <p class="mb-3" id="texto-necessarios"></p>
+            <div class="progress barra-capacidade mb-1" role="progressbar" aria-label="Quanto da agenda é preciso ocupar" id="barra">
               <div class="progress-bar" id="barra-preenchimento"></div>
             </div>
             <div class="small text-secondary mb-3" id="texto-capacidade"></div>
-            <div style="height: 280px"><canvas id="grafico"></canvas></div>
+            <div class="alert mb-0 py-2 small" id="texto-desconto"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h2 class="h6 fw-semibold">Quando você bate a meta</h2>
+            <p class="small text-secondary mb-2">Onde a linha azul cruza a tracejada, você já ganhou o que queria no mês.</p>
+            <div style="height: 260px"><canvas id="grafico"></canvas></div>
           </div>
         </div>
       </div>

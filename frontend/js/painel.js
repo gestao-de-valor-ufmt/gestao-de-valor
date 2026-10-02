@@ -1,43 +1,42 @@
-// Página inicial: indicadores, tabela de preços e gráfico do ponto de equilíbrio.
+// Página inicial: indicadores, tabela de preços e gráfico da meta.
 
 const dados = carregarDados();
 let grafico = null;
 
 function montarIndicadores() {
   document.getElementById("nome-negocio").textContent = dados.negocio;
-  document.getElementById("modo-calculo").textContent = dados.configuracao.incluirMaoDeObra
-    ? "com hora de trabalho"
-    : "modo simples: insumos + custos miúdos + margem";
-  document.getElementById("ind-custo-mensal").textContent = moeda(custoMensalTotal(dados));
-  document.getElementById("ind-custo-hora").textContent = moeda(custoHora(dados));
-  document.getElementById("ind-horas").textContent = `${numero(horasProdutivas(dados))} h`;
+  document.getElementById("ind-meta").textContent = moeda(metaMensal(dados));
+  document.getElementById("ind-hora").textContent = moeda(valorDaHora(dados));
+  document.getElementById("ind-horas").textContent = `${numero(horasDeAtendimento(dados))} h`;
   document.getElementById("ind-servicos").textContent = dados.servicos.length;
 }
 
 function montarTabela() {
   const linhas = dados.servicos.map((s) => {
     const a = analisarServico(s, dados);
-    if (a.preco === null) {
-      return `<tr><td>${escapar(s.nome)}</td><td colspan="3" class="text-danger small">Percentuais somam 100% ou mais</td></tr>`;
+    const abaixo = a.preco < a.precoMinimo - 0.005;
+    let necessarios;
+    if (a.necessarios === null) {
+      necessarios = `<span class="small text-danger">Não paga nem o material</span>`;
+    } else if (a.meta === 0) {
+      necessarios = `<span class="small text-secondary">Sem meta: sobram ${moeda(a.sobra)} por cliente</span>`;
+    } else {
+      const uso = Math.min(100, (a.necessarios / a.capacidade) * 100);
+      const cor = uso >= 100 ? "bg-danger" : uso > 85 ? "bg-warning" : "bg-success";
+      necessarios = `
+        <div class="small mb-1">${a.necessarios} de ${a.capacidade} que cabem</div>
+        <div class="progress barra-capacidade" role="progressbar" aria-label="Quanto da agenda é preciso ocupar"
+             aria-valuenow="${Math.round(uso)}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar ${cor}" style="width: ${uso}%"></div>
+        </div>`;
     }
-    const cabecalho = `
-        <td><div class="fw-medium">${escapar(s.nome)}</div><div class="small text-secondary">${s.minutos} min</div></td>
-        <td class="text-end">${moeda(a.custo)}</td>
-        <td class="text-end fw-semibold">${moeda(a.preco)}</td>`;
-    if (a.pontoEquilibrio === null) {
-      return `<tr>${cabecalho}<td class="small text-danger">Este preço não paga as contas fixas</td></tr>`;
-    }
-    const uso = Math.min(100, (a.pontoEquilibrio / a.capacidade) * 100);
-    const cor = uso > 90 ? "bg-danger" : uso > 75 ? "bg-warning" : "bg-success";
     return `
-      <tr>${cabecalho}
-        <td style="min-width: 150px">
-          <div class="small mb-1">${a.pontoEquilibrio} de ${a.capacidade} possíveis</div>
-          <div class="progress barra-capacidade" role="progressbar" aria-label="Uso da capacidade"
-               aria-valuenow="${Math.round(uso)}" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress-bar ${cor}" style="width: ${uso}%"></div>
-          </div>
-        </td>
+      <tr>
+        <td><a class="fw-medium text-reset" href="calculadora.html?servico=${s.id}">${escapar(s.nome)}</a>
+          <div class="small text-secondary">${s.minutos} min</div></td>
+        <td class="text-end">${moeda(a.precoMinimo)}</td>
+        <td class="text-end fw-semibold ${abaixo ? "text-danger" : ""}">${moeda(a.preco)}</td>
+        <td style="min-width: 150px">${necessarios}</td>
       </tr>`;
   });
   document.getElementById("tabela-servicos").innerHTML = linhas.join("") ||
@@ -47,22 +46,19 @@ function montarTabela() {
 function montarGrafico() {
   const select = document.getElementById("servico-grafico");
   const servico = dados.servicos.find((s) => s.id === Number(select.value));
-  const texto = document.getElementById("texto-equilibrio");
+  const texto = document.getElementById("texto-meta");
   if (!servico) {
     texto.textContent = "";
     return;
   }
   const a = analisarServico(servico, dados);
-  grafico = desenharGraficoEquilibrio(document.getElementById("grafico"), grafico, dados, a);
-  if (a.preco === null) {
-    texto.innerHTML = "";
-  } else if (a.pontoEquilibrio === null) {
-    texto.innerHTML = `Vendendo <strong>${escapar(servico.nome)}</strong> a ${moeda(a.preco)}, a linha de receita
-      nunca alcança a de custos: o preço não deixa nenhuma sobra para pagar as contas fixas.`;
-  } else {
-    texto.innerHTML = `Vendendo <strong>${escapar(servico.nome)}</strong> a ${moeda(a.preco)}, você cobre todos os custos a partir do
-      <strong>${a.pontoEquilibrio}º atendimento</strong> do mês. Onde as linhas se cruzam, começa o lucro.`;
-  }
+  grafico = desenharGraficoMeta(document.getElementById("grafico"), grafico, a);
+  texto.innerHTML = a.necessarios === null
+    ? `Cobrando ${moeda(a.preco)}, não sobra nada de cada atendimento: a meta nunca é alcançada.`
+    : a.meta === 0
+    ? `Sem salário nem contas definidos em "Seu mês". Cada cliente deixa ${moeda(a.sobra)} no seu bolso.`
+    : `Cobrando ${moeda(a.preco)} na <strong>${escapar(servico.nome)}</strong>, você bate a meta no
+       <strong>${a.necessarios}º atendimento</strong> do mês. Depois disso, é dinheiro extra.`;
 }
 
 function iniciar() {

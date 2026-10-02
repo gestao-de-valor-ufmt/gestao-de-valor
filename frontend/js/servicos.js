@@ -1,10 +1,20 @@
-// Página de serviços: fichas técnicas com insumos e tempo.
+// Página de serviços: o que cada atendimento usa de material, quanto tempo leva e quanto se cobra.
 
 const dados = carregarDados();
+
+function campoValor(id, campo, valor, passo) {
+  return `
+    <div class="input-group input-group-sm" style="width: 7.5rem">
+      <span class="input-group-text">R$</span>
+      <input class="form-control text-end" type="number" min="0" step="${passo}" id="${campo}-${id}"
+             value="${valor ?? 0}" onchange="alterarServico(${id}, '${campo}', this.value)">
+    </div>`;
+}
 
 function montarLista() {
   const cartoes = dados.servicos.map((s) => {
     const a = analisarServico(s, dados);
+    const abaixo = a.preco < a.precoMinimo - 0.005;
     const itens = s.insumos.map((item) => {
       const insumo = dados.insumos.find((i) => i.id === item.insumoId);
       if (!insumo) return "";
@@ -27,26 +37,24 @@ function montarLista() {
                 <i class="bi bi-trash"></i>
               </button>
             </div>
-            <div class="linha-composicao small"><span>Insumos</span><span>${moeda(a.insumos)}</span></div>
+            <div class="linha-composicao small"><span>Material</span><span>${moeda(a.material)}</span></div>
             <div class="linha-composicao small align-items-center">
-              <label for="miudos-${s.id}">Custos miúdos</label>
-              <div class="input-group input-group-sm" style="width: 7.5rem">
-                <span class="input-group-text">R$</span>
-                <input class="form-control text-end" type="number" min="0" step="0.5" id="miudos-${s.id}"
-                       value="${s.custosMiudos}" onchange="alterarCustosMiudos(${s.id}, this.value)">
-              </div>
+              <label for="outrosGastos-${s.id}">Deslocamento e outros</label>
+              ${campoValor(s.id, "outrosGastos", s.outrosGastos, 0.5)}
             </div>
-            <div class="linha-composicao small"><span>Mão de obra (${s.minutos} min)</span>
-              <span>${dados.configuracao.incluirMaoDeObra ? moeda(a.maoDeObra) : '<span class="text-secondary">não incluída</span>'}</span></div>
-            <div class="linha-composicao fw-semibold"><span>Custo total</span><span>${moeda(a.custo)}</span></div>
             <details class="small mt-2">
-              <summary class="text-secondary">Ver insumos (${s.insumos.length})</summary>
+              <summary class="text-secondary">Ver material (${s.insumos.length} itens)</summary>
               <ul class="list-unstyled mt-2 mb-0 vstack gap-1">${itens}</ul>
             </details>
-            <div class="mt-auto pt-3 d-flex justify-content-between align-items-center">
-              <div><div class="small text-secondary">Preço sugerido</div><div class="fs-5 fw-bold text-primary">${moeda(a.preco)}</div></div>
-              <a class="btn btn-outline-primary btn-sm" href="calculadora.html?servico=${s.id}">
-                <i class="bi bi-calculator me-1"></i>Simular
+            <div class="mt-auto pt-3">
+              <div class="linha-composicao"><span>Cobre pelo menos</span><strong>${moeda(a.precoMinimo)}</strong></div>
+              <div class="linha-composicao align-items-center">
+                <label for="precoCobrado-${s.id}">Você cobra</label>
+                ${campoValor(s.id, "precoCobrado", s.precoCobrado, 1)}
+              </div>
+              ${abaixo ? `<div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle me-1"></i>Abaixo do mínimo</div>` : ""}
+              <a class="btn btn-outline-primary btn-sm w-100 mt-3" href="calculadora.html?servico=${s.id}">
+                <i class="bi bi-calculator me-1"></i>Abrir na calculadora
               </a>
             </div>
           </div>
@@ -58,9 +66,9 @@ function montarLista() {
     `<div class="col-12 text-secondary">Nenhum serviço cadastrado.</div>`;
 }
 
-function alterarCustosMiudos(id, valor) {
+function alterarServico(id, campo, valor) {
   const servico = dados.servicos.find((s) => s.id === id);
-  servico.custosMiudos = Math.max(0, Number(valor) || 0);
+  servico[campo] = Math.max(0, Number(valor) || 0);
   salvarDados(dados);
   montarLista();
 }
@@ -78,7 +86,7 @@ function adicionarLinhaInsumo() {
   const linha = document.createElement("div");
   linha.className = "row g-2 align-items-center linha-insumo";
   linha.innerHTML = `
-    <div class="col"><select class="form-select form-select-sm" aria-label="Insumo">${opcoes}</select></div>
+    <div class="col"><select class="form-select form-select-sm" aria-label="Material">${opcoes}</select></div>
     <div class="col-3"><input class="form-control form-control-sm" type="number" min="0.1" step="0.1" value="1" aria-label="Quantidade"></div>
     <div class="col-auto"><button type="button" class="btn btn-sm btn-link text-danger p-0" aria-label="Remover linha"><i class="bi bi-x-lg"></i></button></div>`;
   linha.querySelector("button").addEventListener("click", () => linha.remove());
@@ -105,7 +113,8 @@ function iniciar() {
       id: proximoId(dados.servicos),
       nome: document.getElementById("servico-nome").value.trim(),
       minutos: Number(document.getElementById("servico-minutos").value),
-      custosMiudos: Number(document.getElementById("servico-miudos").value) || 0,
+      outrosGastos: Number(document.getElementById("servico-outros").value) || 0,
+      precoCobrado: Number(document.getElementById("servico-preco").value) || 0,
       insumos,
     });
     salvarDados(dados);

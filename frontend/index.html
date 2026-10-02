@@ -15,29 +15,29 @@
 
   <main class="container py-4">
     <h1 class="h3 titulo-pagina">Olá, <span id="nome-negocio"></span></h1>
-    <p class="text-secondary mb-4">Resumo de custos e preços do seu negócio.</p>
+    <p class="text-secondary mb-4">Quanto cobrar e quantos clientes você precisa para ganhar o que quer.</p>
 
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
         <div class="card indicador h-100"><div class="card-body">
-          <div class="icone mb-2"><i class="bi bi-wallet2"></i></div>
-          <div class="rotulo">Custo mensal</div>
-          <div class="valor" id="ind-custo-mensal"></div>
-          <div class="small text-secondary">custos fixos + pró-labore</div>
+          <div class="icone mb-2"><i class="bi bi-bullseye"></i></div>
+          <div class="rotulo">Meta do mês</div>
+          <div class="valor" id="ind-meta"></div>
+          <div class="small text-secondary">salário + contas</div>
         </div></div>
       </div>
       <div class="col-6 col-lg-3">
         <div class="card indicador h-100"><div class="card-body">
           <div class="icone mb-2"><i class="bi bi-clock-history"></i></div>
-          <div class="rotulo">Hora técnica</div>
-          <div class="valor" id="ind-custo-hora"></div>
-          <div class="small text-secondary">quanto custa 1 hora sua</div>
+          <div class="rotulo">Cada hora rende</div>
+          <div class="valor" id="ind-hora"></div>
+          <div class="small text-secondary">para bater a meta</div>
         </div></div>
       </div>
       <div class="col-6 col-lg-3">
         <div class="card indicador h-100"><div class="card-body">
           <div class="icone mb-2"><i class="bi bi-calendar-check"></i></div>
-          <div class="rotulo">Horas produtivas</div>
+          <div class="rotulo">Horas atendendo</div>
           <div class="valor" id="ind-horas"></div>
           <div class="small text-secondary">por mês</div>
         </div></div>
@@ -56,11 +56,12 @@
       <div class="col-lg-7">
         <div class="card h-100">
           <div class="card-body">
-            <h2 class="h6 fw-semibold mb-3">Preços sugeridos <span class="small fw-normal text-secondary">(<span id="modo-calculo"></span>)</span></h2>
+            <h2 class="h6 fw-semibold mb-1">Seus preços</h2>
+            <p class="small text-secondary mb-3">Atendimentos por mês para bater a meta, se você fizer só aquele serviço.</p>
             <div class="table-responsive">
               <table class="table align-middle mb-0">
                 <thead>
-                  <tr><th>Serviço</th><th class="text-end">Custo</th><th class="text-end">Preço</th><th>Meta mínima no mês</th></tr>
+                  <tr><th>Serviço</th><th class="text-end">Mínimo</th><th class="text-end">Você cobra</th><th>Atendimentos/mês</th></tr>
                 </thead>
                 <tbody id="tabela-servicos"></tbody>
               </table>
@@ -72,10 +73,10 @@
         <div class="card h-100">
           <div class="card-body d-flex flex-column">
             <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-              <h2 class="h6 fw-semibold mb-0">Ponto de equilíbrio</h2>
+              <h2 class="h6 fw-semibold mb-0">Quando você bate a meta</h2>
               <select class="form-select form-select-sm w-auto" id="servico-grafico" aria-label="Serviço do gráfico"></select>
             </div>
-            <p class="small text-secondary mb-2" id="texto-equilibrio"></p>
+            <p class="small text-secondary mb-2" id="texto-meta"></p>
             <div class="flex-grow-1" style="min-height: 260px"><canvas id="grafico"></canvas></div>
           </div>
         </div>
