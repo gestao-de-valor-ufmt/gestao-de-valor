@@ -5,6 +5,12 @@ function custoPorUso(insumo) {
   return insumo.rendimento > 0 ? insumo.preco / insumo.rendimento : 0;
 }
 
+// Rendimento estimado pelo uso: quanto a embalagem dura × atendimentos nesse período.
+// Ex.: dura 2 semanas e faz 10 atendimentos por semana → rende cerca de 20.
+function rendimentoEstimado(duracao, atendimentosPorPeriodo) {
+  return duracao * atendimentosPorPeriodo;
+}
+
 function totalContasFixas(dados) {
   return dados.custosFixos.reduce((soma, c) => soma + c.valor, 0);
 }

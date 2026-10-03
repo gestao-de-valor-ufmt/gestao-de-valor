@@ -77,6 +77,18 @@ def custo_por_uso(preco_embalagem: float, rendimento: float) -> float:
     return preco_embalagem / rendimento
 
 
+def rendimento_estimado(duracao: float, atendimentos_por_periodo: float) -> float:
+    """Estima quantos usos uma embalagem rende pelo tempo que ela dura.
+
+    Para quem não sabe o rendimento: "dura 2 semanas e faço 10 atendimentos
+    por semana" → rende cerca de 20. Duração e atendimentos usam a mesma
+    unidade de tempo (dias, semanas ou meses).
+    """
+    if duracao <= 0 or atendimentos_por_periodo <= 0:
+        raise ValueError("Duração e atendimentos precisam ser maiores que zero.")
+    return duracao * atendimentos_por_periodo
+
+
 def custo_material(itens: list[tuple[float, float]]) -> float:
     """Soma do material usado num atendimento.
 
