@@ -57,6 +57,16 @@ material      = Σ(custo_por_uso × quantidade)
 gasto         = material + deslocamento_e_outros
 ```
 
+**Não sabe quanto rende?** A tela de materiais tem uma calculadora rápida que estima o
+rendimento pelo tempo que a embalagem dura:
+
+```
+rendimento ≈ duração × atendimentos_por_período
+```
+
+Exemplo: o esmalte dura 2 semanas e é usado em 10 atendimentos por semana → rende cerca de
+**20 atendimentos**. O resultado é arredondado para o inteiro mais próximo (no mínimo 1).
+
 - **Deslocamento e outros**: um valor por serviço para gastos difíceis de medir (gasolina,
   passagem, gás, detergente).
 

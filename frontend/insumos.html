@@ -62,6 +62,36 @@
             <label class="form-label" for="insumo-rendimento">Rende quantos usos?</label>
             <input class="form-control" id="insumo-rendimento" type="number" min="1" required>
           </div>
+          <div class="col-12">
+            <button type="button" class="btn btn-link btn-sm p-0" data-bs-toggle="collapse" data-bs-target="#calc-rendimento"
+                    aria-expanded="false" aria-controls="calc-rendimento">
+              <i class="bi bi-question-circle me-1"></i>Não sabe quanto rende?
+            </button>
+            <div class="collapse" id="calc-rendimento">
+              <div class="border rounded p-3 mt-2 bg-body-tertiary">
+                <p class="small mb-3">Pense na última embalagem que você usou até acabar.</p>
+                <div class="row g-2 mb-2">
+                  <div class="col-12 small" id="rotulo-duracao">Quanto tempo ela durou?</div>
+                  <div class="col-5">
+                    <input class="form-control form-control-sm" type="number" min="1" id="rend-duracao" aria-labelledby="rotulo-duracao">
+                  </div>
+                  <div class="col-7">
+                    <select class="form-select form-select-sm" id="rend-unidade" aria-label="Unidade de tempo">
+                      <option value="dia">dias</option>
+                      <option value="semana" selected>semanas</option>
+                      <option value="mês">meses</option>
+                    </select>
+                  </div>
+                </div>
+                <label class="small mb-1" for="rend-por-periodo" id="rotulo-por-periodo"></label>
+                <input class="form-control form-control-sm mb-3" type="number" min="1" id="rend-por-periodo">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                  <span class="small" id="rend-resultado">Preencha os dois campos.</span>
+                  <button type="button" class="btn btn-outline-primary btn-sm" id="rend-usar" disabled>Usar este valor</button>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="col-12 small">Custo por uso: <strong id="insumo-resultado">—</strong></div>
         </div>
         <div class="modal-footer">

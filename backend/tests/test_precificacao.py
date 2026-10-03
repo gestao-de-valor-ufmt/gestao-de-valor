@@ -18,6 +18,7 @@ from app.core.precificacao import (
     meta_mensal,
     parte_da_meta,
     preco_minimo,
+    rendimento_estimado,
     sobra_por_atendimento,
     valor_da_hora,
 )
@@ -118,6 +119,19 @@ def test_custo_por_uso():
 def test_custo_por_uso_rendimento_zero():
     with pytest.raises(ValueError):
         custo_por_uso(12, 0)
+
+
+def test_rendimento_estimado():
+    # Esmalte que dura 2 semanas, usado em 10 atendimentos por semana
+    assert rendimento_estimado(2, 10) == 20
+    # Acetona que dura 1,5 mês, usada em 40 atendimentos por mês
+    assert rendimento_estimado(1.5, 40) == 60
+
+
+@pytest.mark.parametrize("duracao, por_periodo", [(0, 10), (2, 0), (-1, 10)])
+def test_rendimento_estimado_invalido(duracao, por_periodo):
+    with pytest.raises(ValueError):
+        rendimento_estimado(duracao, por_periodo)
 
 
 def test_custo_material():
