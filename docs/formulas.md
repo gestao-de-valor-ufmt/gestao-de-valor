@@ -72,6 +72,14 @@ preço_mínimo  = (gasto + parte_da_meta) / (1 − taxa_maquininha / 100)
 A taxa da maquininha é cobrada **sobre o preço**, por isso se divide. Para quem recebe em
 dinheiro ou Pix, a taxa é 0 e o preço mínimo é só `gasto + parte_da_meta`.
 
+**Por que dividir, e não somar a taxa:** para receber R$ 40 com taxa de 10%, parece que basta
+cobrar R$ 44 (40 + 10%). Mas a maquininha cobra 10% **dos R$ 44**, ou seja, R$ 4,40, e sobram
+R$ 39,60: faltam 40 centavos. O certo é R$ 40 / (1 − 0,10) = **R$ 44,44**; 10% disso são
+R$ 4,44, e sobram exatamente R$ 40.
+
+A calculadora mostra, para o preço cobrado, quanto a maquininha desconta e quanto a pessoa
+recebe de fato (o valor líquido).
+
 Exemplo (manicure, 60 min, sem maquininha): R$ 5,72 + R$ 20,35 = **R$ 26,07**.
 
 ## 5. Atendimentos necessários

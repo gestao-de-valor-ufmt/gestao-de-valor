@@ -17,6 +17,7 @@ function servicoSelecionado() {
 function preencherCampos() {
   const servico = servicoSelecionado();
   document.getElementById("salario").value = dados.configuracao.salario;
+  document.getElementById("taxaCartao").value = dados.configuracao.taxaCartao ?? 0;
   for (const campo of CAMPOS_SERVICO) {
     document.getElementById(campo).value = servico[campo] ?? 0;
   }
@@ -50,6 +51,7 @@ function mostrarNecessarios(a) {
   const barra = document.getElementById("barra-preenchimento");
   const desconto = document.getElementById("texto-desconto");
   texto("titulo-cobrando", `Cobrando ${moeda(a.preco)}`);
+  mostrarLiquido(a);
 
   if (a.necessarios === null) {
     texto("necessarios", "Não fecha a conta");
@@ -100,6 +102,17 @@ function mostrarNecessarios(a) {
   }
 }
 
+// Quanto a maquininha desconta do preço cobrado e quanto cai na conta.
+function mostrarLiquido(a) {
+  const caixa = document.getElementById("texto-liquido");
+  const taxa = dados.configuracao.taxaCartao || 0;
+  caixa.hidden = !(taxa > 0 && a.preco > 0);
+  if (caixa.hidden) return;
+  caixa.innerHTML = `<i class="bi bi-credit-card me-1"></i>Cobrando ${moeda(a.preco)} na maquininha
+    (${numero(taxa, 1)}%), ela desconta <strong>${moeda(a.taxaNoPreco)}</strong> e você recebe
+    <strong>${moeda(a.preco - a.taxaNoPreco)}</strong>.`;
+}
+
 function iniciar() {
   const select = document.getElementById("servico");
   if (!dados.servicos.length) {
@@ -119,6 +132,12 @@ function iniciar() {
 
   document.getElementById("salario").addEventListener("input", (e) => {
     dados.configuracao.salario = Math.max(0, Number(e.target.value) || 0);
+    salvarDados(dados);
+    calcular();
+  });
+
+  document.getElementById("taxaCartao").addEventListener("input", (e) => {
+    dados.configuracao.taxaCartao = Math.min(99, Math.max(0, Number(e.target.value) || 0));
     salvarDados(dados);
     calcular();
   });
