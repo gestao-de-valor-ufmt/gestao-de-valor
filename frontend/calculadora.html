@@ -69,6 +69,12 @@
                 <span class="input-group-text">R$</span>
                 <input class="form-control" type="number" min="0" step="1" id="precoCobrado">
               </div>
+              <label class="form-label small mt-2" for="taxaCartao">Taxa da maquininha</label>
+              <div class="input-group input-group-sm" style="max-width: 9rem">
+                <input class="form-control" type="number" min="0" max="20" step="0.1" id="taxaCartao">
+                <span class="input-group-text">%</span>
+              </div>
+              <div class="form-text">Deixe 0 se recebe em dinheiro ou Pix.</div>
             </div>
           </div>
         </div>
@@ -91,6 +97,7 @@
             <div class="small text-secondary"><i class="bi bi-calendar-check me-1"></i><span id="titulo-cobrando"></span></div>
             <div class="preco-destaque mb-1" id="necessarios"></div>
             <p class="mb-3" id="texto-necessarios"></p>
+            <div class="alert alert-light border py-2 small mb-3" id="texto-liquido"></div>
             <div class="progress barra-capacidade mb-1" role="progressbar" aria-label="Quanto da agenda é preciso ocupar" id="barra">
               <div class="progress-bar" id="barra-preenchimento"></div>
             </div>

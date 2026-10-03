@@ -156,6 +156,18 @@ def test_preco_minimo_taxa_invalida(taxa):
         preco_minimo(10, 20, taxa)
 
 
+def test_somar_a_taxa_ao_preco_nao_basta():
+    """Para receber R$ 40 com 10% de taxa, cobrar R$ 44 não é suficiente.
+
+    A maquininha cobra 10% dos R$ 44 (R$ 4,40) e sobram R$ 39,60: faltam 40 centavos.
+    Dividir em vez de somar resolve: R$ 40 / 0,90 = R$ 44,44, e 10% disso deixa R$ 40.
+    """
+    assert arredondar_moeda(sobra_por_atendimento(44, gasto=0, taxa_cartao=10)) == 39.60
+    preco = preco_minimo(gasto=40, parte_meta=0, taxa_cartao=10)
+    assert arredondar_moeda(preco) == 44.44
+    assert sobra_por_atendimento(preco, gasto=0, taxa_cartao=10) == pytest.approx(40)
+
+
 def test_sobra_por_atendimento_com_taxa():
     assert sobra_por_atendimento(31.25, 10, taxa_cartao=4) == pytest.approx(20)
 
