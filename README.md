@@ -29,9 +29,10 @@ Protótipo publicado: https://gestao-de-valor-ufmt.github.io/gestao-de-valor/
 backend/
   app/
     core/      # motor de cálculo (fórmulas puras)
-    routers/   # endpoints da API
+    routers/   # endpoints da API, um arquivo por tela
     models/    # schemas Pydantic
-    db/        # acesso ao Firestore
+    services/  # junta o motor de cálculo com os dados cadastrados
+    db/        # armazenamento (memória por enquanto; Firestore em seguida)
     main.py    # ponto de entrada da API
   tests/       # testes automáticos (pytest)
 frontend/
@@ -58,6 +59,7 @@ uvicorn app.main:app --reload
 
 - API: http://localhost:8000
 - Documentação (Swagger): http://localhost:8000/docs
+- Resumo dos endpoints: [docs/api.md](docs/api.md)
 
 Rodar os testes:
 
