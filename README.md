@@ -60,6 +60,12 @@ uvicorn app.main:app --reload
 - API: http://localhost:8000
 - Documentação (Swagger): http://localhost:8000/docs
 - Resumo dos endpoints: [docs/api.md](docs/api.md)
+- Estrutura do banco de dados: [docs/banco-de-dados.md](docs/banco-de-dados.md)
+
+Sem configurar nada, a API guarda os dados na memória e exige login. Para usar o Firestore ou
+testar sem login, copie `backend/.env.example` para `backend/.env` e ajuste os valores. A chave
+do Firebase (`firebase-service-account.json`) é pedida a quem administra o projeto e **nunca** vai
+para o GitHub.
 
 Rodar os testes:
 

@@ -4,9 +4,11 @@ O motor (app/core/precificacao.py) só conhece números. Aqui os números são t
 da configuração, das contas, dos materiais e dos serviços.
 """
 
+from dataclasses import dataclass
+
 from app.core import precificacao as p
-from app.db.repositorio import RepositorioMemoria
-from app.models.schemas import Analise, AnaliseServico, Resumo, Servico
+from app.db.repositorio import Repositorio
+from app.models.schemas import Analise, AnaliseServico, Material, Resumo, Servico
 
 
 def analisar(
@@ -42,31 +44,45 @@ def analisar(
     )
 
 
-def meta_e_horas(repo: RepositorioMemoria) -> tuple[float, float, float]:
-    """Meta do mês, horas de atendimento e total de contas, a partir do que está cadastrado."""
+@dataclass
+class Contexto:
+    """Dados do mês lidos uma vez só, para não consultar o banco a cada serviço."""
+
+    meta: float
+    horas: float
+    total_contas: float
+    taxa_cartao: float
+    materiais: dict[int, Material]
+
+
+def carregar_contexto(repo: Repositorio) -> Contexto:
     config = repo.configuracao
     total_contas = sum(c.valor for c in repo.contas.listar())
-    meta = p.meta_mensal(config.salario, total_contas, config.reserva)
-    horas = p.horas_de_atendimento(config.dias_por_mes, config.horas_por_dia)
-    return meta, horas, total_contas
+    return Contexto(
+        meta=p.meta_mensal(config.salario, total_contas, config.reserva),
+        horas=p.horas_de_atendimento(config.dias_por_mes, config.horas_por_dia),
+        total_contas=total_contas,
+        taxa_cartao=config.taxa_cartao,
+        materiais={m.id: m for m in repo.materiais.listar()},
+    )
 
 
-def custo_material_do_servico(servico: Servico, repo: RepositorioMemoria) -> float:
-    itens = []
-    for item in servico.materiais:
-        material = repo.materiais.obter(item.material_id)
-        if material is not None:
-            itens.append((p.custo_por_uso(material.preco, material.rendimento), item.quantidade))
+def custo_material_do_servico(servico: Servico, materiais: dict[int, Material]) -> float:
+    itens = [
+        (p.custo_por_uso(materiais[i.material_id].preco, materiais[i.material_id].rendimento), i.quantidade)
+        for i in servico.materiais
+        if i.material_id in materiais
+    ]
     return p.custo_material(itens)
 
 
-def analisar_servico(servico: Servico, repo: RepositorioMemoria) -> AnaliseServico:
-    meta, horas, _ = meta_e_horas(repo)
+def analisar_servico(servico: Servico, repo: Repositorio, contexto: Contexto | None = None) -> AnaliseServico:
+    contexto = contexto or carregar_contexto(repo)
     analise = analisar(
-        meta=meta,
-        horas=horas,
-        taxa_cartao=repo.configuracao.taxa_cartao,
-        material=custo_material_do_servico(servico, repo),
+        meta=contexto.meta,
+        horas=contexto.horas,
+        taxa_cartao=contexto.taxa_cartao,
+        material=custo_material_do_servico(servico, contexto.materiais),
         outros_gastos=servico.outros_gastos,
         minutos=servico.minutos,
         preco_cobrado=servico.preco_cobrado,
@@ -74,12 +90,12 @@ def analisar_servico(servico: Servico, repo: RepositorioMemoria) -> AnaliseServi
     return AnaliseServico(servico_id=servico.id, nome=servico.nome, **analise.model_dump())
 
 
-def resumo(repo: RepositorioMemoria) -> Resumo:
-    meta, horas, total_contas = meta_e_horas(repo)
+def resumo(repo: Repositorio) -> Resumo:
+    contexto = carregar_contexto(repo)
     return Resumo(
-        meta=p.arredondar_moeda(meta),
-        total_contas=p.arredondar_moeda(total_contas),
-        horas_de_atendimento=horas,
-        valor_da_hora=p.arredondar_moeda(p.valor_da_hora(meta, horas)),
-        servicos=[analisar_servico(s, repo) for s in repo.servicos.listar()],
+        meta=p.arredondar_moeda(contexto.meta),
+        total_contas=p.arredondar_moeda(contexto.total_contas),
+        horas_de_atendimento=contexto.horas,
+        valor_da_hora=p.arredondar_moeda(p.valor_da_hora(contexto.meta, contexto.horas)),
+        servicos=[analisar_servico(s, repo, contexto) for s in repo.servicos.listar()],
     )

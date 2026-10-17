@@ -9,29 +9,35 @@ Este documento resume a organização da API para quem vai desenvolver ou avalia
 
 ## Organização do código
 
-```
+``
 backend/app/
 ├── main.py              # cria a API, registra os routers e trata erros
+├── config.py            # configurações lidas de variáveis de ambiente
+├── auth.py              # confere o token de login do Firebase e descobre o usuário
 ├── core/precificacao.py # motor de cálculo: fórmulas puras (ver docs/formulas.md)
 ├── models/schemas.py    # formato dos dados que entram e saem (Pydantic)
-├── db/repositorio.py    # onde os dados ficam guardados
+├── db/repositorio.py    # onde os dados ficam guardados (memória ou Firestore)
+├── db/firebase.py       # conexão com o Firebase
 ├── db/exemplo.py        # dados de exemplo (manicure a domicílio)
 ├── services/analise.py  # junta o motor de cálculo com os dados cadastrados
 └── routers/             # endpoints, um arquivo por tela do site
-```
+``
 
 O caminho de uma requisição:
 
-```
+``
 Site → router (recebe e confere os dados) → services (calcula) → core (fórmulas)
                      ↓
                    db (guarda e lê)
-```
+``
 
 ## Endpoints
 
 | Tela do site | Método e caminho | O que faz |
 |---|---|---|
+| — | GET /conta | Quem está logado (uid) |
+| — | POST /conta/exemplo | Apaga os dados do usuário e carrega o exemplo da manicure |
+| — | DELETE /conta/dados | Apaga todos os dados do usuário |
 | Seu mês | `GET /configuracao` | Ver salário, reserva, dias, horas e taxa da maquininha |
 | Seu mês | `PUT /configuracao` | Salvar a configuração |
 | Seu mês | `GET /contas` | Listar contas fixas |
@@ -56,7 +62,7 @@ Site → router (recebe e confere os dados) → services (calcula) → core (fó
 
 `GET /servicos/1/analise`
 
-```json
+``json
 {
   "servico_id": 1,
   "nome": "Manicure",
@@ -74,12 +80,13 @@ Site → router (recebe e confere os dados) → services (calcula) → core (fó
   "atendimentos_necessarios": 79,
   "desconto_maximo": 13.93
 }
-```
+``
 
 ## Respostas de erro
 
 | Código | Quando |
 |---|---|
+| `401` | Sem login, ou com o token vencido ou inválido |
 | `404` | O id informado não existe |
 | `409` | Tentativa de apagar um material usado em algum serviço |
 | `422` | Dados inválidos (salário negativo, tempo zero, material inexistente, taxa de 100%…) |
@@ -91,11 +98,35 @@ O corpo traz a explicação em português no campo `detail`.
 Os cálculos usam precisão total e todos os valores em R$ saem arredondados para centavos com
 a regra comercial ("0,5 sobe"). Detalhes na seção "Precisão numérica" de [formulas.md](formulas.md).
 
-## Situação atual e próximos passos
+## Login
 
-- **Armazenamento:** por enquanto os dados ficam **na memória** e voltam ao exemplo da manicure
-  quando o servidor reinicia. O próximo passo é guardar no **Google Cloud Firestore**: basta criar
-  um repositório com os mesmos métodos de `RepositorioMemoria` e trocar `obter_repositorio()`.
-- **Login:** ainda não há usuários. Com o **Firebase Authentication**, cada pessoa verá só os
-  próprios dados.
-- **Publicação:** a API ainda não está no ar; o plano é publicá-la no **Render**.
+Todos os endpoints, menos /calculadora/simular, /calculadora/rendimento e /health, exigem login.
+
+1. O site faz o login pelo **Firebase Authentication** (e-mail e senha, ou conta Google).
+2. O Firebase entrega ao site um **token JWT** (o "ID token"), válido por 1 hora e renovado sozinho.
+3. O site envia o token em cada pedido: `Authorization: Bearer <token>`.
+4. A API confere a assinatura e a validade do token com o Firebase e descobre o `uid` da pessoa.
+5. A API lê e grava só em `usuarios/{uid}`. Sem token, ou com token vencido, a resposta é `401`.
+
+No Swagger, clique em **Authorize** e cole um token para testar os endpoints protegidos.
+
+## Configuração
+
+A API lê as configurações de variáveis de ambiente (ou do arquivo `backend/.env`, que não vai
+para o GitHub). Modelo em [`backend/.env.example`](../backend/.env.example); explicação de cada
+variável em `backend/app/config.py`.
+
+| Variável | Valores | Para quê |
+|---|---|---|
+| `ARMAZENAMENTO` | `memoria` / `firestore` | Onde guardar os dados |
+| `AUTENTICACAO` | `ligada` / `desligada` | Exigir login (desligada só para testes locais, usa o usuário `demo`) |
+| `GOOGLE_APPLICATION_CREDENTIALS` | caminho do arquivo | Chave da conta de serviço, no computador |
+| `FIREBASE_CREDENCIAIS_JSON` | conteúdo do JSON | Chave da conta de serviço, no servidor |
+| `ORIGENS_PERMITIDAS` | endereços separados por vírgula | Sites que podem chamar a API |
+
+O banco de dados está descrito em [banco-de-dados.md](banco-de-dados.md).
+
+## Próximos passos
+
+- **Publicação:** colocar a API no ar no **Render**.
+- **Site:** trocar o armazenamento no navegador pelas chamadas à API e criar a tela de login.
