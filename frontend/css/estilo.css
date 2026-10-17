@@ -111,6 +111,99 @@ main {
   height: 0.6rem;
 }
 
+/* Página de ajuda: texto do manual */
+.sumario-ajuda {
+  position: sticky;
+  top: 1rem;
+}
+
+.manual {
+  line-height: 1.7;
+}
+
+.manual h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.manual h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--cor-primaria);
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e4e8f1;
+  scroll-margin-top: 1rem;
+}
+
+.manual h2:first-of-type {
+  margin-top: 1.5rem;
+}
+
+.manual blockquote {
+  background-color: #fff4d6;
+  border-left: 4px solid #f0b400;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.manual blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.manual li {
+  margin-bottom: 0.35rem;
+}
+
+.manual img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.15);
+}
+
+/* Impressão e "Salvar como PDF": só o texto do manual, sem menu, botões e rodapé */
+@media print {
+  #topo,
+  #rodape,
+  .nao-imprimir {
+    display: none !important;
+  }
+
+  body {
+    background-color: #fff;
+  }
+
+  main.container {
+    max-width: none;
+    padding: 0 !important;
+  }
+
+  .row > .col-lg-9 {
+    width: 100%;
+  }
+
+  .card {
+    box-shadow: none;
+  }
+
+  .manual {
+    padding: 0 !important;
+    font-size: 11pt;
+  }
+
+  .manual h2 {
+    break-after: avoid;
+  }
+
+  .manual p,
+  .manual li,
+  .manual blockquote {
+    break-inside: avoid;
+  }
+}
+
 /* Número das perguntas da calculadora */
 .numero-pergunta {
   display: inline-grid;

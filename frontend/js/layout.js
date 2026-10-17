@@ -6,6 +6,7 @@ const PAGINAS = [
   { arquivo: "insumos.html", titulo: "Materiais", icone: "bi-box-seam" },
   { arquivo: "servicos.html", titulo: "Serviços", icone: "bi-card-checklist" },
   { arquivo: "calculadora.html", titulo: "Calculadora", icone: "bi-calculator" },
+  { arquivo: "ajuda.html", titulo: "Ajuda", icone: "bi-question-circle" },
 ];
 
 function montarLayout() {
