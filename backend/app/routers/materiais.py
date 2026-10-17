@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.db.repositorio import Repo
+from app.db.repositorio import Repo, material_em_uso
 from app.models.schemas import Material, MaterialEntrada
 
 router = APIRouter(prefix="/materiais", tags=["Materiais"])
@@ -35,7 +35,7 @@ def remover_material(id: int, repo: Repo):
     """Não deixa apagar um material usado em algum serviço."""
     if repo.materiais.obter(id) is None:
         raise _nao_encontrado(id)
-    if repo.material_em_uso(id):
+    if material_em_uso(repo, id):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             "Este material é usado em algum serviço. Remova-o do serviço antes.",

@@ -20,6 +20,26 @@ def client():
     app.dependency_overrides.clear()
 
 
+# ---------- Conta ----------
+
+def test_apagar_dados_e_carregar_exemplo(client):
+    assert client.delete("/conta/dados").status_code == 204
+    assert client.get("/servicos").json() == []
+    assert client.get("/configuracao").json()["salario"] == 0
+
+    assert client.post("/conta/exemplo").status_code == 204
+    servicos = client.get("/servicos").json()
+    assert len(servicos) == 5
+    # Os materiais do exemplo apontam para materiais que existem de fato
+    ids_materiais = {m["id"] for m in client.get("/materiais").json()}
+    assert all(i["material_id"] in ids_materiais for s in servicos for i in s["materiais"])
+    assert client.get("/servicos/%d/analise" % servicos[0]["id"]).json()["preco_minimo"] == 26.07
+
+
+def test_sem_login_usuario_e_demo(client):
+    assert client.get("/conta").json() == {"uid": "demo"}
+
+
 # ---------- Seu mês ----------
 
 def test_obter_configuracao(client):

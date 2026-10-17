@@ -1,15 +1,26 @@
-"""Armazenamento dos dados.
+"""Armazenamento dos dados de cada usuário.
 
-Por enquanto tudo fica na memória do servidor e se perde quando ele reinicia.
-Na próxima etapa, um RepositorioFirestore com os mesmos métodos substitui este,
-sem mudar nada nos endpoints: eles só conhecem a função obter_repositorio().
+Dois jeitos de guardar, com os mesmos métodos:
+- RepositorioMemoria: na memória do servidor (testes e desenvolvimento).
+- RepositorioFirestore: no Google Cloud Firestore (produção).
+
+A variável ARMAZENAMENTO escolhe qual usar (veja app/config.py). Os endpoints só
+conhecem a função obter_repositorio(), que já entrega o repositório do usuário logado.
+
+Estrutura no Firestore (uma "pasta" por usuário):
+    usuarios/{uid}                → configuração do mês e contadores de id
+    usuarios/{uid}/contas/{id}    → contas fixas
+    usuarios/{uid}/materiais/{id} → materiais
+    usuarios/{uid}/servicos/{id}  → serviços
 """
 
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, Generic, Protocol, TypeVar
 
 from fastapi import Depends
 from pydantic import BaseModel
 
+from app.auth import Usuario
+from app.config import configuracoes
 from app.models.schemas import (
     Configuracao,
     ContaFixa,
@@ -24,7 +35,46 @@ Entrada = TypeVar("Entrada", bound=BaseModel)
 Registro = TypeVar("Registro", bound=BaseModel)
 
 
-class Colecao(Generic[Entrada, Registro]):
+def configuracao_inicial() -> Configuracao:
+    """Configuração de quem acabou de criar a conta."""
+    return Configuracao(salario=0, reserva=0, dias_por_mes=22, horas_por_dia=8, taxa_cartao=0)
+
+
+class Colecao(Protocol[Entrada, Registro]):
+    def listar(self) -> list[Registro]: ...
+    def obter(self, id: int) -> Registro | None: ...
+    def criar(self, dados: Entrada) -> Registro: ...
+    def atualizar(self, id: int, dados: Entrada) -> Registro | None: ...
+    def remover(self, id: int) -> bool: ...
+
+
+class Repositorio(Protocol):
+    configuracao: Configuracao
+    contas: Colecao[ContaFixaEntrada, ContaFixa]
+    materiais: Colecao[MaterialEntrada, Material]
+    servicos: Colecao[ServicoEntrada, Servico]
+
+
+def material_em_uso(repo: Repositorio, material_id: int) -> bool:
+    return any(
+        item.material_id == material_id
+        for servico in repo.servicos.listar()
+        for item in servico.materiais
+    )
+
+
+def apagar_tudo(repo: Repositorio) -> None:
+    """Apaga serviços, materiais e contas, e volta a configuração ao início."""
+    for colecao in (repo.servicos, repo.materiais, repo.contas):
+        for registro in colecao.listar():
+            colecao.remover(registro.id)
+    repo.configuracao = configuracao_inicial()
+
+
+# ---------- Memória ----------
+
+
+class ColecaoMemoria(Generic[Entrada, Registro]):
     """Lista de registros com id, como uma tabela simples."""
 
     def __init__(self, modelo: type[Registro]):
@@ -56,35 +106,113 @@ class Colecao(Generic[Entrada, Registro]):
 
 
 class RepositorioMemoria:
-    def __init__(self, configuracao: Configuracao):
-        self.configuracao = configuracao
-        self.contas: Colecao[ContaFixaEntrada, ContaFixa] = Colecao(ContaFixa)
-        self.materiais: Colecao[MaterialEntrada, Material] = Colecao(Material)
-        self.servicos: Colecao[ServicoEntrada, Servico] = Colecao(Servico)
+    def __init__(self, configuracao: Configuracao | None = None):
+        self.configuracao = configuracao or configuracao_inicial()
+        self.contas: ColecaoMemoria[ContaFixaEntrada, ContaFixa] = ColecaoMemoria(ContaFixa)
+        self.materiais: ColecaoMemoria[MaterialEntrada, Material] = ColecaoMemoria(Material)
+        self.servicos: ColecaoMemoria[ServicoEntrada, Servico] = ColecaoMemoria(Servico)
 
-    def material_em_uso(self, material_id: int) -> bool:
-        return any(
-            item.material_id == material_id
-            for servico in self.servicos.listar()
-            for item in servico.materiais
+
+# ---------- Firestore ----------
+
+
+class ColecaoFirestore(Generic[Entrada, Registro]):
+    """Uma subcoleção do usuário no Firestore. O id do documento é o número do registro."""
+
+    def __init__(self, cliente, usuario_ref, nome: str, modelo: type[Registro]):
+        self._cliente = cliente
+        self._usuario_ref = usuario_ref
+        self._ref = usuario_ref.collection(nome)
+        self._nome = nome
+        self._modelo = modelo
+
+    def _montar(self, documento) -> Registro:
+        return self._modelo(id=int(documento.id), **documento.to_dict())
+
+    def listar(self) -> list[Registro]:
+        return sorted((self._montar(d) for d in self._ref.stream()), key=lambda r: r.id)
+
+    def obter(self, id: int) -> Registro | None:
+        documento = self._ref.document(str(id)).get()
+        return self._montar(documento) if documento.exists else None
+
+    def _reservar_id(self) -> int:
+        """Pega o próximo id numa transação, para dois cadastros simultâneos não usarem o mesmo número."""
+        from google.cloud import firestore
+
+        @firestore.transactional
+        def reservar(transacao):
+            snapshot = self._usuario_ref.get(transaction=transacao)
+            contadores = (snapshot.to_dict() or {}).get("proximos_ids", {}) if snapshot.exists else {}
+            proximo = contadores.get(self._nome, 1)
+            transacao.set(self._usuario_ref, {"proximos_ids": {self._nome: proximo + 1}}, merge=True)
+            return proximo
+
+        return reservar(self._cliente.transaction())
+
+    def criar(self, dados: Entrada) -> Registro:
+        id = self._reservar_id()
+        self._ref.document(str(id)).set(dados.model_dump())
+        return self._modelo(id=id, **dados.model_dump())
+
+    def atualizar(self, id: int, dados: Entrada) -> Registro | None:
+        documento = self._ref.document(str(id))
+        if not documento.get().exists:
+            return None
+        documento.set(dados.model_dump())
+        return self._modelo(id=id, **dados.model_dump())
+
+    def remover(self, id: int) -> bool:
+        documento = self._ref.document(str(id))
+        if not documento.get().exists:
+            return False
+        documento.delete()
+        return True
+
+
+class RepositorioFirestore:
+    def __init__(self, cliente, uid: str):
+        self._usuario_ref = cliente.collection("usuarios").document(uid)
+        self.contas: ColecaoFirestore[ContaFixaEntrada, ContaFixa] = ColecaoFirestore(
+            cliente, self._usuario_ref, "contas", ContaFixa
+        )
+        self.materiais: ColecaoFirestore[MaterialEntrada, Material] = ColecaoFirestore(
+            cliente, self._usuario_ref, "materiais", Material
+        )
+        self.servicos: ColecaoFirestore[ServicoEntrada, Servico] = ColecaoFirestore(
+            cliente, self._usuario_ref, "servicos", Servico
         )
 
+    @property
+    def configuracao(self) -> Configuracao:
+        documento = self._usuario_ref.get()
+        dados = (documento.to_dict() or {}).get("configuracao") if documento.exists else None
+        return Configuracao(**dados) if dados else configuracao_inicial()
 
-_repositorio: RepositorioMemoria | None = None
+    @configuracao.setter
+    def configuracao(self, valor: Configuracao) -> None:
+        self._usuario_ref.set({"configuracao": valor.model_dump()}, merge=True)
 
 
-def obter_repositorio() -> RepositorioMemoria:
-    """Dependência do FastAPI: entrega o repositório para os endpoints.
+# ---------- Qual usar ----------
 
-    Na primeira chamada, carrega os dados de exemplo (manicure a domicílio).
-    """
-    global _repositorio
-    if _repositorio is None:
-        from app.db.exemplo import criar_repositorio_exemplo
+_memoria: dict[str, RepositorioMemoria] = {}
 
-        _repositorio = criar_repositorio_exemplo()
-    return _repositorio
+
+def obter_repositorio(uid: Usuario) -> Repositorio:
+    """Dependência do FastAPI: entrega o repositório do usuário logado."""
+    if configuracoes.armazenamento == "firestore":
+        from app.db.firebase import cliente_firestore
+
+        return RepositorioFirestore(cliente_firestore(), uid)
+
+    if uid not in _memoria:
+        from app.db.exemplo import preencher_com_exemplo
+
+        _memoria[uid] = RepositorioMemoria()
+        preencher_com_exemplo(_memoria[uid])
+    return _memoria[uid]
 
 
 # Atalho para os endpoints: "repo: Repo" recebe o repositório automaticamente.
-Repo = Annotated[RepositorioMemoria, Depends(obter_repositorio)]
+Repo = Annotated[Repositorio, Depends(obter_repositorio)]

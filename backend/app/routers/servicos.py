@@ -14,7 +14,8 @@ def _nao_encontrado(id: int) -> HTTPException:
 
 
 def _conferir_materiais(dados: ServicoEntrada, repo: Repo) -> None:
-    faltando = [i.material_id for i in dados.materiais if repo.materiais.obter(i.material_id) is None]
+    existentes = {m.id for m in repo.materiais.listar()}
+    faltando = [i.material_id for i in dados.materiais if i.material_id not in existentes]
     if faltando:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT,
