@@ -116,3 +116,17 @@ Na dúvida, peça ajuda no grupo antes de apagar o código de alguém.
 - **Fórmulas** ficam em `backend/app/core/` e **toda fórmula precisa de teste** em `backend/tests/`.
 - **Frontend**: use as classes do Bootstrap e o arquivo `frontend/css/estilo.css`. Evite CSS dentro do HTML.
 - Rode `pytest` antes de abrir o PR. Os testes também rodam automaticamente no GitHub.
+
+## 6. Editar o manual do usuário (sem instalar nada)
+
+O texto da página **Ajuda** do site fica em [`frontend/manual/manual.md`](frontend/manual/manual.md). Dá para editar direto pelo site do GitHub:
+
+1. Abra o arquivo no GitHub e clique no **lápis** (Edit this file).
+2. Escreva usando Markdown: `## Título de seção`, `**negrito**`, `- item de lista`, `1. passo numerado`.
+3. Na aba **Preview**, confira como vai ficar.
+4. Clique em **Commit changes…**, escolha **Create a new branch** e depois **Propose changes**.
+5. O GitHub abre o Pull Request sozinho. Depois do merge, o site se atualiza em 1 a 2 minutos.
+
+**Imagens:** coloque as capturas de tela em `frontend/manual/img/` e use `![Descrição da imagem](img/nome-do-arquivo.png)` no texto.
+
+**Cada `## Título` vira um item do sumário** da página de ajuda.
