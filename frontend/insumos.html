@@ -96,7 +96,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button class="btn btn-primary">Adicionar</button>
+          <button class="btn btn-primary" id="botao-salvar-insumo">Adicionar</button>
         </div>
       </form>
     </div>
@@ -105,8 +105,11 @@
   <div id="rodape"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="js/dados.js"></script>
-  <script src="js/calculos.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-auth-compat.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/layout.js"></script>
   <script src="js/insumos.js"></script>
 </body>

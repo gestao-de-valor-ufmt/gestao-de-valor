@@ -1,30 +1,28 @@
-// Página inicial: indicadores, tabela de preços e gráfico da meta.
+// Página inicial: indicadores, tabela de preços e gráfico da meta. Os números vêm da API.
 
-const dados = carregarDados();
+let resumo = null;
 let grafico = null;
 
 function montarIndicadores() {
-  document.getElementById("nome-negocio").textContent = dados.negocio;
-  document.getElementById("ind-meta").textContent = moeda(metaMensal(dados));
-  document.getElementById("ind-hora").textContent = moeda(valorDaHora(dados));
-  document.getElementById("ind-horas").textContent = `${numero(horasDeAtendimento(dados))} h`;
-  document.getElementById("ind-servicos").textContent = dados.servicos.length;
+  document.getElementById("ind-meta").textContent = moeda(resumo.meta);
+  document.getElementById("ind-hora").textContent = moeda(resumo.valor_da_hora);
+  document.getElementById("ind-horas").textContent = `${numero(resumo.horas_de_atendimento)} h`;
+  document.getElementById("ind-servicos").textContent = resumo.servicos.length;
 }
 
 function montarTabela() {
-  const linhas = dados.servicos.map((s) => {
-    const a = analisarServico(s, dados);
-    const abaixo = a.preco < a.precoMinimo - 0.005;
+  const linhas = resumo.servicos.map((a) => {
+    const abaixo = a.preco_cobrado < a.preco_minimo - 0.005;
     let necessarios;
-    if (a.necessarios === null) {
+    if (a.atendimentos_necessarios === null) {
       necessarios = `<span class="small text-danger">Não paga nem o material</span>`;
-    } else if (a.meta === 0) {
+    } else if (resumo.meta === 0) {
       necessarios = `<span class="small text-secondary">Sem meta: sobram ${moeda(a.sobra)} por cliente</span>`;
     } else {
-      const uso = Math.min(100, (a.necessarios / a.capacidade) * 100);
+      const uso = Math.min(100, (a.atendimentos_necessarios / a.capacidade) * 100);
       const cor = uso >= 100 ? "bg-danger" : uso > 85 ? "bg-warning" : "bg-success";
       necessarios = `
-        <div class="small mb-1">${a.necessarios} de ${a.capacidade} que cabem</div>
+        <div class="small mb-1">${a.atendimentos_necessarios} de ${a.capacidade} que cabem</div>
         <div class="progress barra-capacidade" role="progressbar" aria-label="Quanto da agenda é preciso ocupar"
              aria-valuenow="${Math.round(uso)}" aria-valuemin="0" aria-valuemax="100">
           <div class="progress-bar ${cor}" style="width: ${uso}%"></div>
@@ -32,43 +30,81 @@ function montarTabela() {
     }
     return `
       <tr>
-        <td><a class="fw-medium text-reset" href="calculadora.html?servico=${s.id}">${escapar(s.nome)}</a>
-          <div class="small text-secondary">${s.minutos} min</div></td>
-        <td class="text-end">${moeda(a.precoMinimo)}</td>
-        <td class="text-end fw-semibold ${abaixo ? "text-danger" : ""}">${moeda(a.preco)}</td>
+        <td><a class="fw-medium text-reset" href="calculadora.html?servico=${a.servico_id}">${escapar(a.nome)}</a></td>
+        <td class="text-end">${moeda(a.preco_minimo)}</td>
+        <td class="text-end fw-semibold ${abaixo ? "text-danger" : ""}">${moeda(a.preco_cobrado)}</td>
         <td style="min-width: 150px">${necessarios}</td>
       </tr>`;
   });
   document.getElementById("tabela-servicos").innerHTML = linhas.join("") ||
-    `<tr><td colspan="4" class="text-secondary">Nenhum serviço cadastrado.</td></tr>`;
+    `<tr><td colspan="4" class="text-secondary">Nenhum serviço cadastrado. <a href="servicos.html">Cadastrar serviço</a></td></tr>`;
 }
 
 function montarGrafico() {
   const select = document.getElementById("servico-grafico");
-  const servico = dados.servicos.find((s) => s.id === Number(select.value));
+  const a = resumo.servicos.find((s) => s.servico_id === Number(select.value));
   const texto = document.getElementById("texto-meta");
-  if (!servico) {
-    texto.textContent = "";
+  if (!a) {
+    texto.textContent = "Cadastre um serviço para ver o gráfico.";
     return;
   }
-  const a = analisarServico(servico, dados);
-  grafico = desenharGraficoMeta(document.getElementById("grafico"), grafico, a);
-  texto.innerHTML = a.necessarios === null
-    ? `Cobrando ${moeda(a.preco)}, não sobra nada de cada atendimento: a meta nunca é alcançada.`
-    : a.meta === 0
+  grafico = desenharGraficoMeta(document.getElementById("grafico"), grafico, { ...a, meta: resumo.meta });
+  texto.innerHTML = a.atendimentos_necessarios === null
+    ? `Cobrando ${moeda(a.preco_cobrado)}, não sobra nada de cada atendimento: a meta nunca é alcançada.`
+    : resumo.meta === 0
     ? `Sem salário nem contas definidos em "Seu mês". Cada cliente deixa ${moeda(a.sobra)} no seu bolso.`
-    : `Cobrando ${moeda(a.preco)} na <strong>${escapar(servico.nome)}</strong>, você bate a meta no
-       <strong>${a.necessarios}º atendimento</strong> do mês. Depois disso, é dinheiro extra.`;
+    : `Cobrando ${moeda(a.preco_cobrado)} na <strong>${escapar(a.nome)}</strong>, você bate a meta no
+       <strong>${a.atendimentos_necessarios}º atendimento</strong> do mês. Depois disso, é dinheiro extra.`;
 }
 
-function iniciar() {
+async function carregarExemplo() {
+  const botao = document.getElementById("carregar-exemplo");
+  const textoOriginal = botao.innerHTML;
+  botao.disabled = true;
+  botao.innerHTML = `<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Preparando o exemplo…`;
+  try {
+    await api("/conta/exemplo", { metodo: "POST" });
+    await carregar();
+  } catch (erro) {
+    avisarErro(erro);
+  } finally {
+    botao.disabled = false;
+    botao.innerHTML = textoOriginal;
+  }
+}
+
+async function carregar() {
+  const area = document.getElementById("carregando-painel");
+  carregando(area, "Carregando seus números…");
+  try {
+    resumo = await api("/calculadora/resumo");
+  } catch (erro) {
+    area.innerHTML = `<div class="alert alert-danger">${escapar(erro.message)}</div>`;
+    return;
+  }
+  area.innerHTML = "";
+
+  // Conta nova: sem serviços e sem meta, mostra as boas-vindas.
+  const vazia = resumo.servicos.length === 0 && resumo.meta === 0;
+  document.getElementById("boas-vindas").hidden = !vazia;
+  document.getElementById("conteudo-painel").hidden = vazia;
+  if (vazia) return;
+
   montarIndicadores();
   montarTabela();
-
   const select = document.getElementById("servico-grafico");
-  select.innerHTML = dados.servicos.map((s) => `<option value="${s.id}">${escapar(s.nome)}</option>`).join("");
-  select.addEventListener("change", montarGrafico);
+  select.innerHTML = resumo.servicos.map((s) => `<option value="${s.servico_id}">${escapar(s.nome)}</option>`).join("");
   montarGrafico();
+}
+
+async function iniciar() {
+  const usuario = await exigirLogin();
+  const nome = usuario.displayName || (usuario.email || "").split("@")[0];
+  if (nome) document.getElementById("nome-usuario").textContent = `, ${nome.split(" ")[0]}`;
+
+  document.getElementById("servico-grafico").addEventListener("change", montarGrafico);
+  document.getElementById("carregar-exemplo").addEventListener("click", carregarExemplo);
+  await carregar();
 }
 
 iniciar();

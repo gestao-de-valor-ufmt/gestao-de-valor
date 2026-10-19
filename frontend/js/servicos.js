@@ -1,6 +1,9 @@
 // Página de serviços: o que cada atendimento usa de material, quanto tempo leva e quanto se cobra.
+// Os dados ficam na API; o preço mínimo de cada serviço vem do resumo calculado no servidor.
 
-const dados = carregarDados();
+let servicos = [];
+let materiais = [];
+let analises = {}; // análise de cada serviço, por id
 let editandoId = null; // id do serviço aberto no modal; null quando é um serviço novo
 
 function campoValor(id, campo, valor, passo) {
@@ -13,15 +16,16 @@ function campoValor(id, campo, valor, passo) {
 }
 
 function montarLista() {
-  const cartoes = dados.servicos.map((s) => {
-    const a = analisarServico(s, dados);
-    const abaixo = a.preco < a.precoMinimo - 0.005;
-    const itens = s.insumos.map((item) => {
-      const insumo = dados.insumos.find((i) => i.id === item.insumoId);
-      if (!insumo) return "";
+  const porId = Object.fromEntries(materiais.map((m) => [m.id, m]));
+  const cartoes = servicos.map((s) => {
+    const a = analises[s.id];
+    const abaixo = a && a.preco_cobrado < a.preco_minimo - 0.005;
+    const itens = s.materiais.map((item) => {
+      const material = porId[item.material_id];
+      if (!material) return "";
       return `<li class="d-flex justify-content-between">
-        <span>${escapar(insumo.nome)} <span class="text-secondary">× ${item.quantidade}</span></span>
-        <span>${moeda(custoPorUso(insumo) * item.quantidade)}</span>
+        <span>${escapar(material.nome)} <span class="text-secondary">× ${numero(item.quantidade, item.quantidade % 1 ? 1 : 0)}</span></span>
+        <span>${moeda(material.custo_por_uso * item.quantidade)}</span>
       </li>`;
     }).join("");
 
@@ -32,7 +36,7 @@ function montarLista() {
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
                 <h2 class="h5 fw-semibold mb-0">${escapar(s.nome)}</h2>
-                <span class="small text-secondary"><i class="bi bi-clock me-1"></i>${s.minutos} min</span>
+                <span class="small text-secondary"><i class="bi bi-clock me-1"></i>${numero(s.minutos)} min</span>
               </div>
               <div class="d-flex gap-3">
                 <button class="btn btn-sm btn-link p-0" onclick="abrirEdicao(${s.id})" aria-label="Editar ${escapar(s.nome)}" title="Editar">
@@ -43,20 +47,20 @@ function montarLista() {
                 </button>
               </div>
             </div>
-            <div class="linha-composicao small"><span>Material</span><span>${moeda(a.material)}</span></div>
+            <div class="linha-composicao small"><span>Material</span><span>${a ? moeda(a.material) : "—"}</span></div>
             <div class="linha-composicao small align-items-center">
-              <label for="outrosGastos-${s.id}">Deslocamento e outros</label>
-              ${campoValor(s.id, "outrosGastos", s.outrosGastos, 0.5)}
+              <label for="outros_gastos-${s.id}">Deslocamento e outros</label>
+              ${campoValor(s.id, "outros_gastos", s.outros_gastos, 0.5)}
             </div>
             <details class="small mt-2">
-              <summary class="text-secondary">Ver material (${s.insumos.length} itens)</summary>
-              <ul class="list-unstyled mt-2 mb-0 vstack gap-1">${itens}</ul>
+              <summary class="text-secondary">Ver material (${s.materiais.length} itens)</summary>
+              <ul class="list-unstyled mt-2 mb-0 vstack gap-1">${itens || "<li class='text-secondary'>Nenhum material.</li>"}</ul>
             </details>
             <div class="mt-auto pt-3">
-              <div class="linha-composicao"><span>Cobre pelo menos</span><strong>${moeda(a.precoMinimo)}</strong></div>
+              <div class="linha-composicao"><span>Cobre pelo menos</span><strong>${a ? moeda(a.preco_minimo) : "—"}</strong></div>
               <div class="linha-composicao align-items-center">
-                <label for="precoCobrado-${s.id}">Você cobra</label>
-                ${campoValor(s.id, "precoCobrado", s.precoCobrado, 1)}
+                <label for="preco_cobrado-${s.id}">Você cobra</label>
+                ${campoValor(s.id, "preco_cobrado", s.preco_cobrado, 1)}
               </div>
               ${abaixo ? `<div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle me-1"></i>Abaixo do mínimo</div>` : ""}
               <a class="btn btn-outline-primary btn-sm w-100 mt-3" href="calculadora.html?servico=${s.id}">
@@ -69,27 +73,55 @@ function montarLista() {
   });
 
   document.getElementById("lista-servicos").innerHTML = cartoes.join("") ||
-    `<div class="col-12 text-secondary">Nenhum serviço cadastrado.</div>`;
+    `<div class="col-12 text-secondary">Nenhum serviço cadastrado. Clique em <strong>Novo serviço</strong> para começar.</div>`;
 }
 
-function alterarServico(id, campo, valor) {
-  const servico = dados.servicos.find((s) => s.id === id);
-  servico[campo] = Math.max(0, Number(valor) || 0);
-  salvarDados(dados);
+// Recalcula os preços mínimos no servidor e redesenha os cartões.
+async function atualizarAnalises() {
+  const resumo = await api("/calculadora/resumo");
+  analises = Object.fromEntries(resumo.servicos.map((a) => [a.servico_id, a]));
   montarLista();
 }
 
-function removerServico(id) {
-  const servico = dados.servicos.find((s) => s.id === id);
+function dadosParaApi(servico) {
+  const { id, ...corpo } = servico;
+  return corpo;
+}
+
+async function alterarServico(id, campo, valor) {
+  const servico = servicos.find((s) => s.id === id);
+  try {
+    const atualizado = await api(`/servicos/${id}`, {
+      metodo: "PUT", corpo: { ...dadosParaApi(servico), [campo]: Math.max(0, Number(valor) || 0) },
+    });
+    servicos = servicos.map((s) => (s.id === id ? atualizado : s));
+    await atualizarAnalises();
+  } catch (erro) {
+    avisarErro(erro);
+  }
+}
+
+async function removerServico(id) {
+  const servico = servicos.find((s) => s.id === id);
   if (!confirm(`Remover o serviço "${servico.nome}"?`)) return;
-  dados.servicos = dados.servicos.filter((s) => s.id !== id);
-  salvarDados(dados);
-  montarLista();
+  try {
+    await api(`/servicos/${id}`, { metodo: "DELETE" });
+    servicos = servicos.filter((s) => s.id !== id);
+    montarLista();
+  } catch (erro) {
+    avisarErro(erro);
+  }
 }
 
-function adicionarLinhaInsumo(insumoId = null, quantidade = 1) {
-  const opcoes = dados.insumos.map((i) =>
-    `<option value="${i.id}" ${i.id === insumoId ? "selected" : ""}>${escapar(i.nome)}</option>`).join("");
+function adicionarLinhaInsumo(materialId = null, quantidade = 1) {
+  const area = document.getElementById("linhas-insumos");
+  if (!materiais.length) {
+    area.innerHTML = `<p class="small text-secondary mb-0">Você ainda não cadastrou materiais.
+      <a href="insumos.html">Cadastrar materiais</a> (dá para salvar o serviço sem material e completar depois).</p>`;
+    return;
+  }
+  const opcoes = materiais.map((m) =>
+    `<option value="${m.id}" ${m.id === materialId ? "selected" : ""}>${escapar(m.nome)}</option>`).join("");
   const linha = document.createElement("div");
   linha.className = "row g-2 align-items-center linha-insumo";
   linha.innerHTML = `
@@ -97,7 +129,7 @@ function adicionarLinhaInsumo(insumoId = null, quantidade = 1) {
     <div class="col-3"><input class="form-control form-control-sm" type="number" min="0.1" step="0.1" value="${quantidade}" aria-label="Quantidade"></div>
     <div class="col-auto"><button type="button" class="btn btn-sm btn-link text-danger p-0" aria-label="Remover linha"><i class="bi bi-x-lg"></i></button></div>`;
   linha.querySelector("button").addEventListener("click", () => linha.remove());
-  document.getElementById("linhas-insumos").appendChild(linha);
+  area.appendChild(linha);
 }
 
 function abrirEdicao(id) {
@@ -109,7 +141,7 @@ function abrirEdicao(id) {
 function prepararModal(evento) {
   // Aberto pelo botão "Novo serviço" (data-bs-toggle), o evento traz o botão em relatedTarget.
   if (evento.relatedTarget) editandoId = null;
-  const servico = dados.servicos.find((s) => s.id === editandoId);
+  const servico = servicos.find((s) => s.id === editandoId);
 
   document.getElementById("form-servico").reset();
   document.getElementById("linhas-insumos").innerHTML = "";
@@ -122,41 +154,55 @@ function prepararModal(evento) {
   }
   document.getElementById("servico-nome").value = servico.nome;
   document.getElementById("servico-minutos").value = servico.minutos;
-  document.getElementById("servico-outros").value = servico.outrosGastos ?? 0;
-  document.getElementById("servico-preco").value = servico.precoCobrado ?? 0;
-  for (const item of servico.insumos) adicionarLinhaInsumo(item.insumoId, item.quantidade);
+  document.getElementById("servico-outros").value = servico.outros_gastos ?? 0;
+  document.getElementById("servico-preco").value = servico.preco_cobrado ?? 0;
+  if (!servico.materiais.length) adicionarLinhaInsumo();
+  for (const item of servico.materiais) adicionarLinhaInsumo(item.material_id, item.quantidade);
 }
 
-function iniciar() {
+async function salvarModal(e) {
+  e.preventDefault();
+  const corpo = {
+    nome: document.getElementById("servico-nome").value.trim(),
+    minutos: Number(document.getElementById("servico-minutos").value),
+    outros_gastos: Number(document.getElementById("servico-outros").value) || 0,
+    preco_cobrado: Number(document.getElementById("servico-preco").value) || 0,
+    materiais: [...document.querySelectorAll(".linha-insumo")].map((linha) => ({
+      material_id: Number(linha.querySelector("select").value),
+      quantidade: Number(linha.querySelector("input").value) || 0,
+    })).filter((i) => i.quantidade > 0),
+  };
+  const botao = document.getElementById("botao-salvar-servico");
+  botao.disabled = true;
+  try {
+    if (servicos.some((s) => s.id === editandoId)) {
+      const atualizado = await api(`/servicos/${editandoId}`, { metodo: "PUT", corpo });
+      servicos = servicos.map((s) => (s.id === editandoId ? atualizado : s));
+    } else {
+      servicos.push(await api("/servicos", { metodo: "POST", corpo }));
+    }
+    bootstrap.Modal.getInstance(document.getElementById("modal-servico")).hide();
+    await atualizarAnalises();
+  } catch (erro) {
+    avisarErro(erro);
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+async function iniciar() {
+  await exigirLogin();
   document.getElementById("adicionar-linha").addEventListener("click", () => adicionarLinhaInsumo());
   document.getElementById("modal-servico").addEventListener("show.bs.modal", prepararModal);
+  document.getElementById("form-servico").addEventListener("submit", salvarModal);
 
-  document.getElementById("form-servico").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const insumos = [...document.querySelectorAll(".linha-insumo")].map((linha) => ({
-      insumoId: Number(linha.querySelector("select").value),
-      quantidade: Number(linha.querySelector("input").value) || 0,
-    })).filter((i) => i.quantidade > 0);
-
-    const campos = {
-      nome: document.getElementById("servico-nome").value.trim(),
-      minutos: Number(document.getElementById("servico-minutos").value),
-      outrosGastos: Number(document.getElementById("servico-outros").value) || 0,
-      precoCobrado: Number(document.getElementById("servico-preco").value) || 0,
-      insumos,
-    };
-    const existente = dados.servicos.find((s) => s.id === editandoId);
-    if (existente) {
-      Object.assign(existente, campos);
-    } else {
-      dados.servicos.push({ id: proximoId(dados.servicos), ...campos });
-    }
-    salvarDados(dados);
-    montarLista();
-    bootstrap.Modal.getInstance(document.getElementById("modal-servico")).hide();
-  });
-
-  montarLista();
+  carregando(document.getElementById("lista-servicos"));
+  try {
+    [servicos, materiais] = await Promise.all([api("/servicos"), api("/materiais")]);
+    await atualizarAnalises();
+  } catch (erro) {
+    avisarErro(erro);
+  }
 }
 
 iniciar();

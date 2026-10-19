@@ -28,9 +28,43 @@ main {
   border-bottom: 2px solid #fff;
 }
 
-.aviso-prototipo {
+/* Aviso de "conectando ao servidor" quando a API demora para acordar */
+.aviso-demora {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  z-index: 2000;
+  max-width: calc(100% - 2rem);
   background-color: #fff4d6;
   color: #6b4e00;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Tela de login */
+.pagina-login {
+  background: linear-gradient(160deg, var(--cor-primaria) 0%, #1f4fbf 100%);
+}
+
+.cartao-login {
+  max-width: 26rem;
+}
+
+.divisor-ou {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.85rem;
+}
+
+.divisor-ou::before,
+.divisor-ou::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #dde2ee;
 }
 
 .btn-primary {

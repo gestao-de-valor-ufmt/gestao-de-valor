@@ -2,18 +2,22 @@
 
 O Gestão de Valor ajuda você a descobrir **quanto cobrar** pelos seus serviços e **quantos clientes** precisa atender no mês para ganhar o que quer. É gratuito e funciona no computador e no celular.
 
-> **Protótipo:** nesta versão, os dados ficam salvos só no navegador que você está usando. Se trocar de computador ou limpar o navegador, eles somem.
-
 ## Primeiros passos
 
-Preencha as telas nesta ordem. Na primeira vez, leva uns 10 minutos.
+**1. Crie a sua conta.** Na tela de entrada, clique em **Continuar com Google** ou em **Criar conta grátis** (com e-mail e senha). Seus dados ficam guardados na sua conta: você pode entrar de qualquer computador ou celular.
+
+**2. Escolha como começar.** Na primeira vez, o sistema pergunta:
+- **Cadastrar os meus dados:** você preenche tudo do zero.
+- **Ver um exemplo pronto:** a conta é preenchida com os dados de uma manicure a domicílio, para você explorar. Depois é só editar ou apagar.
+
+**3. Preencha as telas nesta ordem.** Na primeira vez, leva uns 10 minutos.
 
 1. **Seu mês:** quanto você quer ganhar, suas contas e suas horas de trabalho.
 2. **Materiais:** o que você compra para atender (esmalte, algodão, luvas…).
 3. **Serviços:** o que você oferece, quanto tempo leva e quanto cobra.
 4. **Calculadora:** veja o preço mínimo e quantos clientes você precisa.
 
-O sistema já vem com um **exemplo de manicure a domicílio** para você explorar. Quando quiser começar com os seus dados, apague os itens do exemplo ou edite por cima.
+Tudo o que você muda é **salvo automaticamente**.
 
 ## Seu mês
 
@@ -34,6 +38,8 @@ São as contas que chegam mesmo se você não atender ninguém: DAS do MEI, celu
 
 No **Resumo do seu mês** aparece a sua **meta**: salário + contas + reserva. É quanto os seus atendimentos precisam render no mês, além do material.
 
+**Sua conta:** no fim da tela, você pode **trocar tudo pelos dados de exemplo** ou **apagar todos os seus dados** para começar de novo. As duas ações apagam o que você cadastrou.
+
 ## Materiais
 
 Cadastre o que você compra para usar nos atendimentos. Clique em **Novo material** e informe:
@@ -41,6 +47,8 @@ Cadastre o que você compra para usar nos atendimentos. Clique em **Novo materia
 - **Nome** e **embalagem** (ex.: Esmalte, frasco 8 ml).
 - **Preço pago:** quanto custou a embalagem.
 - **Rende quantos usos:** em quantos atendimentos ela dá.
+
+Para corrigir um material depois (por exemplo, quando o preço sobe), clique no **lápis**. Para apagar, na **lixeira**. Um material usado em algum serviço só pode ser apagado depois de tirado do serviço.
 
 O sistema calcula o **custo por uso**. Exemplo: um esmalte de R$ 12,00 que rende 20 aplicações custa R$ 0,60 por atendimento.
 
@@ -99,8 +107,14 @@ Não. A maquininha cobra a porcentagem sobre o preço **final**. Para receber R$
 **Eu não tenho contas fixas nem defini salário. Funciona?**
 Funciona. A calculadora mostra quanto sobra de cada cliente e quanto isso rende em 100 atendimentos. Para saber quantos clientes você precisa, preencha quanto quer ganhar.
 
-**Meus dados sumiram. O que aconteceu?**
-Nesta versão de protótipo, os dados ficam só no navegador. Eles somem se você limpar o histórico, usar uma janela anônima ou trocar de aparelho. Para voltar ao exemplo da manicure, use **Restaurar dados de exemplo**, no rodapé.
+**Onde ficam os meus dados? Alguém mais vê?**
+Na sua conta, guardados com segurança na nuvem. Só você vê os seus dados, e pode acessá-los de qualquer aparelho entrando com a mesma conta.
+
+**Esqueci a minha senha.**
+Na tela de entrada, digite o seu e-mail e clique em **Esqueci minha senha**. Você recebe um link para criar uma senha nova (confira também a caixa de spam). Se você entra com o Google, não precisa de senha.
+
+**O sistema demorou para abrir. É normal?**
+No primeiro acesso do dia, o servidor pode levar até 1 minuto para "acordar". Aparece o aviso "Conectando ao servidor…". Depois disso, ele fica rápido.
 
 ## Glossário
 

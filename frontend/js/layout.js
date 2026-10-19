@@ -29,20 +29,40 @@ function montarLayout() {
         </button>
         <div class="collapse navbar-collapse" id="menu">
           <ul class="navbar-nav ms-auto">${links}</ul>
+          <div class="ms-lg-3" id="area-usuario"></div>
         </div>
       </div>
-    </nav>
-    <div class="aviso-prototipo text-center small py-1">
-      <i class="bi bi-info-circle me-1"></i>Protótipo com dados de exemplo — as alterações ficam salvas só neste navegador.
-    </div>`;
+    </nav>`;
 
   document.getElementById("rodape").innerHTML = `
-    <footer class="container py-4 small text-secondary d-flex flex-wrap justify-content-between gap-2">
-      <span>Gestão de Valor · Seminário Integrador V · BC&T/UFMT · GPL-3.0</span>
-      <button class="btn btn-link btn-sm p-0 text-secondary" onclick="if (confirm('Apagar suas alterações e voltar aos dados de exemplo?')) restaurarExemplo()">
-        <i class="bi bi-arrow-counterclockwise me-1"></i>Restaurar dados de exemplo
-      </button>
+    <footer class="container py-4 small text-secondary">
+      Gestão de Valor · Seminário Integrador V · BC&T/UFMT · GPL-3.0
     </footer>`;
+
+  // Quem está logado aparece no menu, com o botão de sair.
+  if (typeof usuarioAtual === "function") {
+    usuarioAtual().then((usuario) => {
+      const area = document.getElementById("area-usuario");
+      area.innerHTML = usuario
+        ? `<div class="dropdown">
+             <button class="btn btn-sm btn-outline-light dropdown-toggle mt-2 mt-lg-0" data-bs-toggle="dropdown" aria-expanded="false">
+               <i class="bi bi-person-circle me-1"></i><span class="d-lg-none d-xl-inline">${escapar(usuario.displayName || usuario.email || "Minha conta")}</span>
+             </button>
+             <ul class="dropdown-menu dropdown-menu-end">
+               <li><span class="dropdown-item-text small text-secondary">${escapar(usuario.email || "")}</span></li>
+               <li><hr class="dropdown-divider"></li>
+               <li><button class="dropdown-item" onclick="sair()"><i class="bi bi-box-arrow-right me-2"></i>Sair</button></li>
+             </ul>
+           </div>`
+        : `<a class="btn btn-sm btn-light mt-2 mt-lg-0" href="login.html"><i class="bi bi-box-arrow-in-right me-1"></i>Entrar</a>`;
+    });
+  }
+}
+
+// Mostra "carregando" no lugar do conteúdo enquanto os dados chegam da API.
+function carregando(elemento, texto = "Carregando…") {
+  elemento.innerHTML = `<div class="text-secondary py-4 text-center">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>${texto}</div>`;
 }
 
 const formatadorMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
