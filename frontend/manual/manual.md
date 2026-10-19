@@ -38,7 +38,7 @@ São as contas que chegam mesmo se você não atender ninguém: DAS do MEI, celu
 
 No **Resumo do seu mês** aparece a sua **meta**: salário + contas + reserva. É quanto os seus atendimentos precisam render no mês, além do material.
 
-**Sua conta:** no fim da tela, você pode **trocar tudo pelos dados de exemplo** ou **apagar todos os seus dados** para começar de novo. As duas ações apagam o que você cadastrou.
+**Sua conta:** no fim da tela, você pode **trocar tudo pelos dados de exemplo**, **recomeçar do zero**, **baixar os seus dados** ou **excluir a sua conta** (veja as perguntas frequentes).
 
 ## Materiais
 
@@ -108,7 +108,13 @@ Não. A maquininha cobra a porcentagem sobre o preço **final**. Para receber R$
 Funciona. A calculadora mostra quanto sobra de cada cliente e quanto isso rende em 100 atendimentos. Para saber quantos clientes você precisa, preencha quanto quer ganhar.
 
 **Onde ficam os meus dados? Alguém mais vê?**
-Na sua conta, guardados com segurança na nuvem. Só você vê os seus dados, e pode acessá-los de qualquer aparelho entrando com a mesma conta.
+Na sua conta, guardados com segurança na nuvem. Só você vê os seus dados, e pode acessá-los de qualquer aparelho entrando com a mesma conta. Os detalhes estão na **Política de Privacidade**, no rodapé de todas as páginas.
+
+**Como baixo ou apago os meus dados?**
+Em **Seu mês**, no cartão **Sua conta**:
+- **Baixar meus dados:** salva um arquivo com tudo o que está guardado na sua conta.
+- **Recomeçar do zero:** apaga contas, materiais e serviços, mas mantém a sua conta.
+- **Excluir minha conta:** apaga tudo e também o seu login, de vez. Para confirmar, é preciso digitar EXCLUIR.
 
 **Esqueci a minha senha.**
 Na tela de entrada, digite o seu e-mail e clique em **Esqueci minha senha**. Você recebe um link para criar uma senha nova (confira também a caixa de spam). Se você entra com o Google, não precisa de senha.

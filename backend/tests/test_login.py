@@ -47,7 +47,24 @@ def test_token_invalido_responde_401(client):
 
 
 def test_token_valido_identifica_o_usuario(client):
-    assert client.get("/conta", headers=login("ana")).json() == {"uid": "ana"}
+    assert client.get("/conta", headers=login("ana")).json()["uid"] == "ana"
+
+
+def test_excluir_conta_apaga_dados_e_login(client, monkeypatch):
+    excluidos = []
+    monkeypatch.setattr(firebase_admin.auth, "delete_user", excluidos.append)
+    client.post("/contas", json={"nome": "Aluguel da Ana", "valor": 500}, headers=login("ana"))
+
+    assert client.delete("/conta", headers=login("ana")).status_code == 204
+    assert excluidos == ["ana"]
+    # Os dados da Bia continuam lá
+    assert len(client.get("/servicos", headers=login("bia")).json()) == 5
+    # Se a Ana voltar com o mesmo token, começa do zero (aqui, a memória refaz o exemplo)
+    assert "Aluguel da Ana" not in [c["nome"] for c in client.get("/contas", headers=login("ana")).json()]
+
+
+def test_nao_exclui_conta_sem_login(client):
+    assert client.delete("/conta").status_code == 401
 
 
 def test_cada_usuario_ve_so_os_proprios_dados(client):

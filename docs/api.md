@@ -35,9 +35,11 @@ Site → router (recebe e confere os dados) → services (calcula) → core (fó
 
 | Tela do site | Método e caminho | O que faz |
 |---|---|---|
-| — | GET /conta | Quem está logado (uid) |
-| — | POST /conta/exemplo | Apaga os dados do usuário e carrega o exemplo da manicure |
-| — | DELETE /conta/dados | Apaga todos os dados do usuário |
+| — | `GET /conta` | Quem está logado (uid) e o aceite da Política de Privacidade |
+| Login | `POST /conta/privacidade` | Registra o aceite da Política de Privacidade (versão e data) |
+| Seu mês | `POST /conta/exemplo` | Apaga os dados do usuário e carrega o exemplo da manicure |
+| Seu mês | `DELETE /conta/dados` | Apaga contas, materiais e serviços (a conta continua) |
+| Seu mês | `DELETE /conta` | Exclui a conta de vez: todos os dados e o login (LGPD) |
 | Seu mês | `GET /configuracao` | Ver salário, reserva, dias, horas e taxa da maquininha |
 | Seu mês | `PUT /configuracao` | Salvar a configuração |
 | Seu mês | `GET /contas` | Listar contas fixas |

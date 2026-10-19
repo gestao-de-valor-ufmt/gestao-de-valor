@@ -5,9 +5,28 @@ ou um tempo de atendimento zero, a API responde com erro 422 explicando o proble
 Os mesmos modelos geram a documentação do Swagger (/docs).
 """
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field, computed_field
 
 from app.core.precificacao import arredondar_moeda, custo_por_uso
+
+# ---------- Conta e privacidade ----------
+
+
+class AceiteEntrada(BaseModel):
+    versao: str = Field(min_length=1, max_length=20, description="Versão da Política de Privacidade aceita.", examples=["1.0"])
+
+
+class Aceite(BaseModel):
+    versao: str
+    aceito_em: datetime = Field(description="Quando a pessoa aceitou a política (UTC).")
+
+
+class Conta(BaseModel):
+    uid: str
+    privacidade: Aceite | None = Field(description="Aceite da Política de Privacidade, se houver.")
+
 
 # ---------- Seu mês ----------
 

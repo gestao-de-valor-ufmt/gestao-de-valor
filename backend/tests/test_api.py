@@ -37,7 +37,25 @@ def test_apagar_dados_e_carregar_exemplo(client):
 
 
 def test_sem_login_usuario_e_demo(client):
-    assert client.get("/conta").json() == {"uid": "demo"}
+    assert client.get("/conta").json() == {"uid": "demo", "privacidade": None}
+
+
+def test_registrar_aceite_da_privacidade(client):
+    primeiro = client.post("/conta/privacidade", json={"versao": "1.0"}).json()
+    assert primeiro["versao"] == "1.0"
+    # Aceitar de novo a mesma versão não muda a data do primeiro aceite
+    segundo = client.post("/conta/privacidade", json={"versao": "1.0"}).json()
+    assert segundo["aceito_em"] == primeiro["aceito_em"]
+    assert client.get("/conta").json()["privacidade"]["versao"] == "1.0"
+
+
+def test_excluir_conta_apaga_tudo(client):
+    client.post("/conta/privacidade", json={"versao": "1.0"})
+    assert client.delete("/conta").status_code == 204
+    assert client.get("/servicos").json() == []
+    assert client.get("/materiais").json() == []
+    assert client.get("/contas").json() == []
+    assert client.get("/conta").json()["privacidade"] is None
 
 
 # ---------- Seu mês ----------

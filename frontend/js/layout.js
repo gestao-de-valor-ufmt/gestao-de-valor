@@ -35,8 +35,9 @@ function montarLayout() {
     </nav>`;
 
   document.getElementById("rodape").innerHTML = `
-    <footer class="container py-4 small text-secondary">
-      Gestão de Valor · Seminário Integrador V · BC&T/UFMT · GPL-3.0
+    <footer class="container py-4 small text-secondary d-flex flex-wrap justify-content-between gap-2">
+      <span>Gestão de Valor · Seminário Integrador V · BC&T/UFMT · GPL-3.0</span>
+      <a class="link-secondary" href="privacidade.html">Política de Privacidade</a>
     </footer>`;
 
   // Quem está logado aparece no menu, com o botão de sair.

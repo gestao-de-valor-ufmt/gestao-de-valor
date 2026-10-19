@@ -28,6 +28,18 @@ function mostrarErro(erro) {
   mostrar("erro", ERROS[erro.code] || "Não foi possível entrar. Tente de novo.");
 }
 
+// Registra o aceite da Política de Privacidade (LGPD) e segue para o sistema.
+// Se a API falhar agora, o aceite é pedido de novo dentro do sistema (veja auth.js).
+async function concluirLogin() {
+  try {
+    await api("/conta/privacidade", { metodo: "POST", corpo: { versao: VERSAO_PRIVACIDADE } });
+    marcarAceiteNestaSessao();
+  } catch {
+    // segue mesmo assim
+  }
+  irParaDestino();
+}
+
 // Depois do login, volta para a página que a pessoa queria abrir (só páginas do próprio site).
 function irParaDestino() {
   const voltar = new URLSearchParams(location.search).get("voltar") || "";
@@ -43,6 +55,7 @@ function alternarModo() {
   document.getElementById("pergunta-troca").textContent = criandoConta ? "Já tem conta?" : "Ainda não tem conta?";
   document.getElementById("trocar-modo").textContent = criandoConta ? "Entrar" : "Criar conta grátis";
   document.getElementById("area-esqueci").hidden = criandoConta;
+  document.getElementById("area-aceite").hidden = !criandoConta;
   document.getElementById("ajuda-senha").hidden = !criandoConta;
   document.getElementById("senha").autocomplete = criandoConta ? "new-password" : "current-password";
 }
@@ -51,25 +64,32 @@ async function enviar(evento) {
   evento.preventDefault();
   const email = document.getElementById("email").value.trim();
   const senha = document.getElementById("senha").value;
+  if (criandoConta && !document.getElementById("aceite").checked) {
+    mostrar("sucesso", "");
+    mostrar("erro", "Para criar a conta, marque que você concorda com a Política de Privacidade.");
+    return;
+  }
   const botao = document.getElementById("botao-enviar");
   botao.disabled = true;
+  botao.innerHTML = `<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Entrando…`;
   try {
     if (criandoConta) {
       await autenticacao.createUserWithEmailAndPassword(email, senha);
     } else {
       await autenticacao.signInWithEmailAndPassword(email, senha);
     }
-    irParaDestino();
+    await concluirLogin();
   } catch (erro) {
     mostrarErro(erro);
     botao.disabled = false;
+    botao.textContent = criandoConta ? "Criar conta" : "Entrar";
   }
 }
 
 async function entrarComGoogle() {
   try {
     await autenticacao.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-    irParaDestino();
+    await concluirLogin();
   } catch (erro) {
     mostrarErro(erro);
   }
@@ -91,6 +111,9 @@ async function esqueciSenha() {
 }
 
 async function iniciar() {
+  if (new URLSearchParams(location.search).get("conta") === "excluida") {
+    document.getElementById("aviso-conta-excluida").hidden = false;
+  }
   // Quem já está logado vai direto para o sistema.
   if (await usuarioAtual()) {
     irParaDestino();

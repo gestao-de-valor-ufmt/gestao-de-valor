@@ -5,6 +5,10 @@ const API_URL = location.hostname === "localhost" || location.hostname === "127.
   ? "http://localhost:8000"
   : "https://gestao-de-valor-api.onrender.com";
 
+// Versão da Política de Privacidade (privacidade.html). Ao mudar a política, aumente o número:
+// quem aceitou a versão antiga verá o pedido de novo aceite.
+const VERSAO_PRIVACIDADE = "1.0";
+
 // Projeto do Firebase (login). Estes dados NÃO são secretos: só identificam o projeto.
 // A proteção vem do token de login conferido pela API e das regras do Firestore.
 const FIREBASE_CONFIG = {

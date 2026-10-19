@@ -49,5 +49,10 @@ def usuario_atual(
     return dados["uid"]
 
 
+def login_obrigatorio() -> bool:
+    """Se o login do Firebase está em uso (False só em desenvolvimento, com o usuário "demo")."""
+    return configuracoes.autenticacao
+
+
 # Atalho para os endpoints: "uid: Usuario" recebe o uid automaticamente.
 Usuario = Annotated[str, Depends(usuario_atual)]

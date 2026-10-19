@@ -14,6 +14,7 @@ Estrutura no Firestore (uma "pasta" por usuário):
     usuarios/{uid}/servicos/{id}  → serviços
 """
 
+from datetime import datetime, timezone
 from typing import Annotated, Generic, Protocol, TypeVar
 
 from fastapi import Depends
@@ -53,6 +54,10 @@ class Repositorio(Protocol):
     contas: Colecao[ContaFixaEntrada, ContaFixa]
     materiais: Colecao[MaterialEntrada, Material]
     servicos: Colecao[ServicoEntrada, Servico]
+
+    def aceite_privacidade(self) -> dict | None: ...
+    def registrar_aceite(self, versao: str) -> dict: ...
+    def apagar_conta(self) -> None: ...
 
 
 def material_em_uso(repo: Repositorio, material_id: int) -> bool:
@@ -111,6 +116,19 @@ class RepositorioMemoria:
         self.contas: ColecaoMemoria[ContaFixaEntrada, ContaFixa] = ColecaoMemoria(ContaFixa)
         self.materiais: ColecaoMemoria[MaterialEntrada, Material] = ColecaoMemoria(Material)
         self.servicos: ColecaoMemoria[ServicoEntrada, Servico] = ColecaoMemoria(Servico)
+        self._aceite: dict | None = None
+
+    def aceite_privacidade(self) -> dict | None:
+        return self._aceite
+
+    def registrar_aceite(self, versao: str) -> dict:
+        if not self._aceite or self._aceite["versao"] != versao:
+            self._aceite = {"versao": versao, "aceito_em": datetime.now(timezone.utc)}
+        return self._aceite
+
+    def apagar_conta(self) -> None:
+        apagar_tudo(self)
+        self._aceite = None
 
 
 # ---------- Firestore ----------
@@ -193,6 +211,26 @@ class RepositorioFirestore:
     def configuracao(self, valor: Configuracao) -> None:
         self._usuario_ref.set({"configuracao": valor.model_dump()}, merge=True)
 
+    def aceite_privacidade(self) -> dict | None:
+        documento = self._usuario_ref.get()
+        return (documento.to_dict() or {}).get("privacidade") if documento.exists else None
+
+    def registrar_aceite(self, versao: str) -> dict:
+        """Guarda a versão da política aceita e quando. Um novo aceite da mesma versão não muda a data."""
+        atual = self.aceite_privacidade()
+        if atual and atual.get("versao") == versao:
+            return atual
+        aceite = {"versao": versao, "aceito_em": datetime.now(timezone.utc)}
+        self._usuario_ref.set({"privacidade": aceite}, merge=True)
+        return aceite
+
+    def apagar_conta(self) -> None:
+        """Apaga todos os documentos do usuário, inclusive o documento principal."""
+        for colecao in (self.servicos, self.materiais, self.contas):
+            for registro in colecao.listar():
+                colecao.remover(registro.id)
+        self._usuario_ref.delete()
+
 
 # ---------- Qual usar ----------
 
@@ -212,6 +250,11 @@ def obter_repositorio(uid: Usuario) -> Repositorio:
         _memoria[uid] = RepositorioMemoria()
         preencher_com_exemplo(_memoria[uid])
     return _memoria[uid]
+
+
+def esquecer_usuario_da_memoria(uid: str) -> None:
+    """Depois de excluir a conta, tira o usuário da memória (no Firestore, o documento já foi apagado)."""
+    _memoria.pop(uid, None)
 
 
 # Atalho para os endpoints: "repo: Repo" recebe o repositório automaticamente.
