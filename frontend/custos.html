@@ -107,6 +107,22 @@
             </div>
             <hr>
             <p class="small mb-0" id="res-hora"></p>
+            <p class="small text-success mt-2 mb-0" id="salvo" hidden><i class="bi bi-cloud-check me-1"></i>Salvo</p>
+          </div>
+        </div>
+
+        <div class="card mt-3">
+          <div class="card-body">
+            <h2 class="h6 fw-semibold mb-2">Sua conta</h2>
+            <p class="small text-secondary">Quer explorar com dados prontos ou recomeçar do zero?</p>
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-primary btn-sm" id="carregar-exemplo">
+                <i class="bi bi-eye me-1"></i>Trocar pelos dados de exemplo
+              </button>
+              <button class="btn btn-outline-danger btn-sm" id="apagar-dados">
+                <i class="bi bi-trash me-1"></i>Apagar todos os meus dados
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -175,8 +191,11 @@
   <div id="rodape"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="js/dados.js"></script>
-  <script src="js/calculos.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/13.0.0/firebase-auth-compat.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/layout.js"></script>
   <script src="js/custos.js"></script>
 </body>

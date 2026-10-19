@@ -126,7 +126,24 @@ variável em `backend/app/config.py`.
 
 O banco de dados está descrito em [banco-de-dados.md](banco-de-dados.md).
 
-## Próximos passos
+## Publicação
 
-- **Publicação:** colocar a API no ar no **Render**.
-- **Site:** trocar o armazenamento no navegador pelas chamadas à API e criar a tela de login.
+A API está no ar no **Render** (plano gratuito): https://gestao-de-valor-api.onrender.com
+
+| Configuração no Render | Valor |
+|---|---|
+| Root Directory | `backend` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| Health Check Path | `/health` |
+| Variáveis | `ARMAZENAMENTO=firestore`, `AUTENTICACAO=ligada`, `ORIGENS_PERMITIDAS`, `PYTHON_VERSION=3.12.8` e a secreta `FIREBASE_CREDENCIAIS_JSON` |
+
+A cada merge na `main`, o Render publica a versão nova sozinho.
+
+## Como o site usa a API
+
+- `frontend/js/auth.js` faz o login com o Firebase e fornece o token.
+- `frontend/js/api.js` envia cada pedido com o token, traduz os erros e mostra o aviso
+  "Conectando ao servidor…" quando a API demora para acordar.
+- A calculadora usa `POST /calculadora/simular` enquanto a pessoa digita (resposta rápida, sem
+  gravar) e salva as mudanças com `PUT` quando ela para de digitar.

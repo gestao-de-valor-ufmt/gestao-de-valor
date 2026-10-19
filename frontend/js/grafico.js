@@ -1,9 +1,10 @@
 // Gráfico "quando bato a meta": o que sobra no bolso x meta do mês, por número de atendimentos.
+// Recebe a análise que vem da API: meta, sobra, capacidade e atendimentos_necessarios.
 
-function desenharGraficoMeta(canvas, graficoAnterior, analise) {
+function desenharGraficoMeta(canvas, graficoAnterior, { meta, sobra, capacidade, atendimentos_necessarios }) {
   if (graficoAnterior) graficoAnterior.destroy();
 
-  const limite = Math.max(analise.capacidade, analise.necessarios || 0) + 5;
+  const limite = Math.max(capacidade, atendimentos_necessarios || 0) + 5;
   const passo = Math.max(1, Math.round(limite / 12));
   const quantidades = [];
   for (let q = 0; q <= limite; q += passo) quantidades.push(q);
@@ -15,7 +16,7 @@ function desenharGraficoMeta(canvas, graficoAnterior, analise) {
       datasets: [
         {
           label: "O que sobra para você",
-          data: quantidades.map((q) => Math.max(0, q * analise.sobra)),
+          data: quantidades.map((q) => Math.max(0, q * sobra)),
           borderColor: "#1f4fbf",
           backgroundColor: "#1f4fbf",
           borderWidth: 2,
@@ -23,7 +24,7 @@ function desenharGraficoMeta(canvas, graficoAnterior, analise) {
         },
         {
           label: "Sua meta do mês",
-          data: quantidades.map(() => analise.meta),
+          data: quantidades.map(() => meta),
           borderColor: "#d9480f",
           backgroundColor: "#d9480f",
           borderWidth: 2,

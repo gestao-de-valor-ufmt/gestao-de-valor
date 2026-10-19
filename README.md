@@ -76,7 +76,24 @@ pytest
 
 ### Frontend
 
-Abra `frontend/index.html` no navegador, ou use a extensão **Live Server** do VS Code.
+Use a extensão **Live Server** do VS Code (porta 5500) para abrir a pasta `frontend/`. O site exige
+login pelo Firebase (endereços `localhost` e `127.0.0.1` já estão autorizados).
+
+- Rodando em `localhost`, o site chama a API local (`http://localhost:8000`). Suba a API antes.
+- No endereço publicado, o site chama a API no Render (`https://gestao-de-valor-api.onrender.com`).
+
+Essa escolha fica em `frontend/js/config.js`.
+
+## Endereços publicados
+
+| O quê | Endereço |
+|---|---|
+| Site | https://gestao-de-valor-ufmt.github.io/gestao-de-valor/ |
+| API | https://gestao-de-valor-api.onrender.com |
+| Documentação da API (Swagger) | https://gestao-de-valor-api.onrender.com/docs |
+
+No plano gratuito do Render, a API "dorme" depois de 15 minutos sem uso; o primeiro acesso
+depois disso leva até 1 minuto.
 
 ## Como contribuir
 

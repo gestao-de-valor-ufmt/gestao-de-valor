@@ -1,95 +1,157 @@
 // Página "Seu mês": salário, contas fixas, tempo de atendimento e taxa da maquininha.
+// Tudo é salvo na API; a meta e o valor da hora vêm do resumo calculado no servidor.
 
-const dados = carregarDados();
-const CAMPOS_CONFIG = ["salario", "reserva", "diasPorMes", "horasPorDia", "taxaCartao"];
+const CAMPOS_CONFIG = ["salario", "reserva", "dias_por_mes", "horas_por_dia", "taxa_cartao"];
+const ID_DO_CAMPO = {
+  salario: "salario", reserva: "reserva", dias_por_mes: "diasPorMes", horas_por_dia: "horasPorDia", taxa_cartao: "taxaCartao",
+};
+
+let configuracao = null;
+let contas = [];
 
 function montarTabela() {
-  document.getElementById("tabela-custos").innerHTML = dados.custosFixos.map((c) => `
+  document.getElementById("tabela-custos").innerHTML = contas.map((c) => `
     <tr>
       <td>${escapar(c.nome)}</td>
       <td class="text-end">${moeda(c.valor)}</td>
       <td class="text-end" style="width: 2rem">
-        <button class="btn btn-sm btn-link text-danger p-0" onclick="removerCusto(${c.id})" aria-label="Remover ${escapar(c.nome)}">
+        <button class="btn btn-sm btn-link text-danger p-0" onclick="removerConta(${c.id})" aria-label="Remover ${escapar(c.nome)}">
           <i class="bi bi-trash"></i>
         </button>
       </td>
     </tr>`).join("") || `<tr><td colspan="3" class="text-secondary">Nenhuma conta cadastrada.</td></tr>`;
-  document.getElementById("total-custos").textContent = moeda(totalContasFixas(dados));
+  document.getElementById("total-custos").textContent = moeda(contas.reduce((soma, c) => soma + c.valor, 0));
 }
 
-function montarResumo() {
-  const config = dados.configuracao;
-  document.getElementById("res-salario").textContent = moeda(config.salario);
-  document.getElementById("res-contas").textContent = moeda(totalContasFixas(dados));
-  document.getElementById("res-reserva").textContent = moeda(config.reserva || 0);
-  document.getElementById("res-meta").textContent = moeda(metaMensal(dados));
-
-  const horas = horasDeAtendimento(dados);
-  document.getElementById("res-hora").innerHTML = horas > 0
-    ? `Você atende <strong>${numero(horas)} horas</strong> por mês. Para bater a meta, cada hora atendendo precisa
-       render <strong>${moeda(valorDaHora(dados))}</strong>, além do material.`
-    : "Preencha os dias e as horas de atendimento.";
-}
-
-function atualizar() {
-  salvarDados(dados);
-  montarTabela();
-  montarResumo();
-}
-
-function removerCusto(id) {
-  dados.custosFixos = dados.custosFixos.filter((c) => c.id !== id);
-  atualizar();
-}
-
-function adicionarCusto(nome, valor) {
-  dados.custosFixos.push({ id: proximoId(dados.custosFixos), nome, valor });
-  atualizar();
-}
-
-function iniciar() {
-  for (const campo of CAMPOS_CONFIG) {
-    const input = document.getElementById(campo);
-    input.value = dados.configuracao[campo] ?? 0;
-    input.addEventListener("input", () => {
-      dados.configuracao[campo] = Math.max(0, Number(input.value) || 0);
-      atualizar();
-    });
+async function montarResumo() {
+  try {
+    const resumo = await api("/calculadora/resumo");
+    document.getElementById("res-salario").textContent = moeda(configuracao.salario);
+    document.getElementById("res-contas").textContent = moeda(resumo.total_contas);
+    document.getElementById("res-reserva").textContent = moeda(configuracao.reserva);
+    document.getElementById("res-meta").textContent = moeda(resumo.meta);
+    document.getElementById("res-hora").innerHTML =
+      `Você atende <strong>${numero(resumo.horas_de_atendimento)} horas</strong> por mês. Para bater a meta, cada hora
+       atendendo precisa render <strong>${moeda(resumo.valor_da_hora)}</strong>, além do material.`;
+  } catch (erro) {
+    document.getElementById("res-hora").textContent = erro.message;
   }
+}
 
-  document.getElementById("form-custo").addEventListener("submit", (e) => {
+function avisarSalvo() {
+  const aviso = document.getElementById("salvo");
+  aviso.hidden = false;
+  clearTimeout(avisarSalvo.temporizador);
+  avisarSalvo.temporizador = setTimeout(() => (aviso.hidden = true), 2000);
+}
+
+const salvarConfiguracao = aoPararDeDigitar(async () => {
+  try {
+    configuracao = await api("/configuracao", { metodo: "PUT", corpo: configuracao });
+    avisarSalvo();
+    await montarResumo();
+  } catch (erro) {
+    avisarErro(erro);
+  }
+});
+
+async function removerConta(id) {
+  try {
+    await api(`/contas/${id}`, { metodo: "DELETE" });
+    contas = contas.filter((c) => c.id !== id);
+    montarTabela();
+    await montarResumo();
+  } catch (erro) {
+    avisarErro(erro);
+  }
+}
+
+async function adicionarConta(nome, valor) {
+  const conta = await api("/contas", { metodo: "POST", corpo: { nome, valor } });
+  contas.push(conta);
+  montarTabela();
+  await montarResumo();
+}
+
+async function acaoDaConta(caminho, metodo, confirmacao) {
+  if (!confirm(confirmacao)) return;
+  try {
+    await api(caminho, { metodo });
+    location.reload();
+  } catch (erro) {
+    avisarErro(erro);
+  }
+}
+
+function iniciarFormularios() {
+  document.getElementById("form-custo").addEventListener("submit", async (e) => {
     e.preventDefault();
-    adicionarCusto(
-      document.getElementById("custo-nome").value.trim(),
-      Number(document.getElementById("custo-valor").value),
-    );
-    e.target.reset();
-    bootstrap.Modal.getInstance(document.getElementById("modal-custo")).hide();
+    try {
+      await adicionarConta(
+        document.getElementById("custo-nome").value.trim(),
+        Number(document.getElementById("custo-valor").value),
+      );
+      e.target.reset();
+      bootstrap.Modal.getInstance(document.getElementById("modal-custo")).hide();
+    } catch (erro) {
+      avisarErro(erro);
+    }
   });
 
+  // Equipamentos: quanto guardar por mês para trocar quando estragar (valor ÷ meses de uso).
   const depValor = document.getElementById("dep-valor");
   const depMeses = document.getElementById("dep-meses");
-  const calcularDepreciacao = () => {
-    const meses = Number(depMeses.value);
-    return meses > 0 ? Number(depValor.value) / meses : null;
-  };
+  const porMes = () => (Number(depMeses.value) > 0 ? Number(depValor.value) / Number(depMeses.value) : null);
   for (const input of [depValor, depMeses]) {
-    input.addEventListener("input", () => {
-      document.getElementById("dep-resultado").textContent = moeda(calcularDepreciacao());
-    });
+    input.addEventListener("input", () => (document.getElementById("dep-resultado").textContent = moeda(porMes())));
   }
-
-  document.getElementById("form-depreciacao").addEventListener("submit", (e) => {
+  document.getElementById("form-depreciacao").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const nome = document.getElementById("dep-nome").value.trim();
-    adicionarCusto(`Reposição: ${nome}`, Math.round(calcularDepreciacao() * 100) / 100);
-    e.target.reset();
-    document.getElementById("dep-resultado").textContent = "—";
-    bootstrap.Modal.getInstance(document.getElementById("modal-depreciacao")).hide();
+    try {
+      const nome = document.getElementById("dep-nome").value.trim();
+      await adicionarConta(`Reposição: ${nome}`, Math.round(porMes() * 100) / 100);
+      e.target.reset();
+      document.getElementById("dep-resultado").textContent = "—";
+      bootstrap.Modal.getInstance(document.getElementById("modal-depreciacao")).hide();
+    } catch (erro) {
+      avisarErro(erro);
+    }
   });
 
+  document.getElementById("carregar-exemplo").addEventListener("click", () => acaoDaConta(
+    "/conta/exemplo", "POST", "Seus dados atuais serão apagados e trocados pelo exemplo da manicure. Continuar?"));
+  document.getElementById("apagar-dados").addEventListener("click", () => acaoDaConta(
+    "/conta/dados", "DELETE", "Apagar todas as suas contas, materiais e serviços? Isso não pode ser desfeito."));
+}
+
+async function iniciar() {
+  await exigirLogin();
+  iniciarFormularios();
+  document.getElementById("tabela-custos").innerHTML =
+    `<tr><td colspan="3" class="text-secondary"><span class="spinner-border spinner-border-sm me-2"></span>Carregando…</td></tr>`;
+
+  try {
+    [configuracao, contas] = await Promise.all([api("/configuracao"), api("/contas")]);
+  } catch (erro) {
+    avisarErro(erro);
+    return;
+  }
+
+  for (const campo of CAMPOS_CONFIG) {
+    const input = document.getElementById(ID_DO_CAMPO[campo]);
+    input.value = configuracao[campo];
+    input.addEventListener("input", () => {
+      const valor = Number(input.value) || 0;
+      // Dias e horas precisam ser maiores que zero: até lá, só marca o campo e não salva.
+      const invalido = (campo === "dias_por_mes" || campo === "horas_por_dia") && valor <= 0;
+      input.classList.toggle("is-invalid", invalido);
+      if (invalido) return;
+      configuracao[campo] = Math.max(0, valor);
+      salvarConfiguracao();
+    });
+  }
   montarTabela();
-  montarResumo();
+  await montarResumo();
 }
 
 iniciar();
