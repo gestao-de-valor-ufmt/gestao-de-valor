@@ -44,6 +44,8 @@ usuarios/                          (coleção)
 | `configuracao.horas_por_dia` | número | Horas atendendo por dia, com deslocamento |
 | `configuracao.taxa_cartao` | número | Taxa da maquininha (%) |
 | `proximos_ids.contas` / `.materiais` / `.servicos` | número | Próximo id a usar em cada subcoleção |
+| `privacidade.versao` | texto | Versão da Política de Privacidade aceita (LGPD) |
+| `privacidade.aceito_em` | data e hora | Quando a política foi aceita (prova do consentimento) |
 
 ### `usuarios/{uid}/contas/{id}`
 
@@ -83,6 +85,15 @@ O **custo por uso** (`preco / rendimento`) não é guardado: a API calcula na ho
   risco de valores desatualizados no banco.
 - **Leituras agrupadas.** Para montar o painel, a API lê a configuração, as contas e os materiais
   uma única vez e reaproveita para todos os serviços.
+
+## Privacidade (LGPD)
+
+- **Aceite registrado:** a versão da política aceita e a data ficam em `usuarios/{uid}.privacidade`.
+  Se a política mudar de versão, o site pede um novo aceite.
+- **Direito de acesso:** o botão "Baixar meus dados" junta tudo o que está guardado num arquivo JSON.
+- **Direito de eliminação:** "Excluir minha conta" (`DELETE /conta`) apaga a pasta `usuarios/{uid}`
+  inteira e depois o login no Firebase Authentication. Não fica cópia no banco.
+- **Política de Privacidade:** `frontend/privacidade.html`.
 
 ## Segurança
 

@@ -121,7 +121,66 @@ function iniciarFormularios() {
   document.getElementById("carregar-exemplo").addEventListener("click", () => acaoDaConta(
     "/conta/exemplo", "POST", "Seus dados atuais serão apagados e trocados pelo exemplo da manicure. Continuar?"));
   document.getElementById("apagar-dados").addEventListener("click", () => acaoDaConta(
-    "/conta/dados", "DELETE", "Apagar todas as suas contas, materiais e serviços? Isso não pode ser desfeito."));
+    "/conta/dados", "DELETE", "Apagar todas as suas contas, materiais e serviços e começar do zero? Isso não pode ser desfeito."));
+
+  document.getElementById("baixar-dados").addEventListener("click", baixarMeusDados);
+
+  const confirmar = document.getElementById("confirmar-exclusao");
+  confirmar.addEventListener("input", () => {
+    document.getElementById("botao-excluir").disabled = confirmar.value.trim().toUpperCase() !== "EXCLUIR";
+  });
+  document.getElementById("modal-excluir").addEventListener("show.bs.modal", () => {
+    confirmar.value = "";
+    document.getElementById("botao-excluir").disabled = true;
+  });
+  document.getElementById("form-excluir").addEventListener("submit", excluirConta);
+}
+
+// Direito de acesso (LGPD): junta tudo o que está guardado num arquivo para a pessoa baixar.
+async function baixarMeusDados() {
+  const botao = document.getElementById("baixar-dados");
+  botao.disabled = true;
+  try {
+    const [conta, configuracaoAtual, contasAtuais, materiais, servicos] = await Promise.all([
+      api("/conta"), api("/configuracao"), api("/contas"), api("/materiais"), api("/servicos"),
+    ]);
+    const usuario = autenticacao.currentUser;
+    const dados = {
+      exportado_em: new Date().toISOString(),
+      conta: { uid: conta.uid, email: usuario.email, nome: usuario.displayName, privacidade: conta.privacidade },
+      configuracao: configuracaoAtual,
+      contas_fixas: contasAtuais,
+      materiais,
+      servicos,
+    };
+    const arquivo = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(arquivo);
+    link.download = "meus-dados-gestao-de-valor.json";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (erro) {
+    avisarErro(erro);
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+// Direito de eliminação (LGPD): apaga os dados e o login, e volta para a tela de entrada.
+async function excluirConta(evento) {
+  evento.preventDefault();
+  const botao = document.getElementById("botao-excluir");
+  botao.disabled = true;
+  botao.innerHTML = `<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Excluindo…`;
+  try {
+    await api("/conta", { metodo: "DELETE" });
+    await autenticacao.signOut();
+    location.replace("login.html?conta=excluida");
+  } catch (erro) {
+    avisarErro(erro);
+    botao.disabled = false;
+    botao.textContent = "Excluir minha conta";
+  }
 }
 
 async function iniciar() {

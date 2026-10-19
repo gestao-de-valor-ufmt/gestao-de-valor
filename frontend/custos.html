@@ -119,8 +119,22 @@
               <button class="btn btn-outline-primary btn-sm" id="carregar-exemplo">
                 <i class="bi bi-eye me-1"></i>Trocar pelos dados de exemplo
               </button>
-              <button class="btn btn-outline-danger btn-sm" id="apagar-dados">
-                <i class="bi bi-trash me-1"></i>Apagar todos os meus dados
+              <button class="btn btn-outline-secondary btn-sm" id="apagar-dados">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Recomeçar do zero
+              </button>
+            </div>
+
+            <hr>
+            <h3 class="h6 fw-semibold mb-2">Seus dados e sua privacidade</h3>
+            <p class="small text-secondary">
+              Seus dados são só seus. Veja a <a href="privacidade.html">Política de Privacidade</a>.
+            </p>
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-primary btn-sm" id="baixar-dados">
+                <i class="bi bi-download me-1"></i>Baixar meus dados
+              </button>
+              <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modal-excluir">
+                <i class="bi bi-person-x me-1"></i>Excluir minha conta
               </button>
             </div>
           </div>
@@ -128,6 +142,28 @@
       </div>
     </div>
   </main>
+
+  <div class="modal fade" id="modal-excluir" tabindex="-1" aria-labelledby="titulo-modal-excluir" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="form-excluir">
+        <div class="modal-header">
+          <h2 class="modal-title h5 text-danger" id="titulo-modal-excluir">Excluir minha conta</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Isso apaga <strong>de vez</strong> a sua conta e tudo o que você cadastrou: contas, materiais, serviços e
+            configurações. <strong>Não dá para desfazer.</strong></p>
+          <p class="small text-secondary">Se quiser guardar uma cópia, clique antes em "Baixar meus dados".</p>
+          <label class="form-label" for="confirmar-exclusao">Para confirmar, digite <strong>EXCLUIR</strong>:</label>
+          <input class="form-control" id="confirmar-exclusao" autocomplete="off">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-danger" id="botao-excluir" disabled>Excluir minha conta</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div class="modal fade" id="modal-custo" tabindex="-1" aria-labelledby="titulo-modal-custo" aria-hidden="true">
     <div class="modal-dialog">
