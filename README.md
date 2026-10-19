@@ -1,6 +1,6 @@
 # Gestão de Valor
 
-Metodologia didática e sistema de precificação para prestadores de serviços — Seminário Integrador BCT/UFMT (Campus Várzea Grande).
+Metodologia didática e sistema de precificação para prestadores de serviços — Seminário Integrador BCT/UFMT (Campus Cuiabá).
 
 Ferramenta gratuita e de código aberto para ajudar MEIs e profissionais autônomos a calcular o preço dos seus serviços com base nos custos reais, em vez de "achismo".
 
