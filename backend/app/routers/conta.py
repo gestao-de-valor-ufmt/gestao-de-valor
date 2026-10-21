@@ -1,19 +1,39 @@
-"""Ações sobre a conta inteira do usuário: privacidade (LGPD), exemplo, recomeçar e excluir a conta."""
+"""Ações sobre a conta inteira do usuário: convite, privacidade (LGPD), exemplo, recomeçar e excluir a conta."""
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.auth import Usuario, login_obrigatorio
+from app.auth import SessaoAtual, Usuario, liberar_no_login, login_obrigatorio
+from app.db import convites
 from app.db.exemplo import preencher_com_exemplo
-from app.db.repositorio import Repo, apagar_tudo, esquecer_usuario_da_memoria
-from app.models.schemas import Aceite, AceiteEntrada, Conta
+from app.db.repositorio import Repo, RepoDaConta, apagar_tudo, esquecer_usuario_da_memoria
+from app.models.schemas import Aceite, AceiteEntrada, Conta, ConviteEntrada
 
 router = APIRouter(prefix="/conta", tags=["Conta"])
 
 
 @router.get("", response_model=Conta, summary="Quem está logado")
-def quem_sou(uid: Usuario, repo: Repo):
-    """Devolve o identificador (uid) do usuário e o aceite da Política de Privacidade."""
-    return Conta(uid=uid, privacidade=repo.aceite_privacidade())
+def quem_sou(sessao: SessaoAtual, repo: RepoDaConta):
+    """Devolve o uid, se a conta já tem convite e o aceite da Política de Privacidade."""
+    privacidade = repo.aceite_privacidade() if sessao.tem_convite else None
+    return Conta(uid=sessao.uid, convite=sessao.tem_convite, privacidade=privacidade)
+
+
+@router.post("/convite", response_model=Conta, summary="Usar um código de convite")
+def usar_convite(dados: ConviteEntrada, uid: Usuario):
+    """Libera a conta com um código de convite. Cada código vale para uma única conta e não vence.
+
+    Depois de usar o código, o site precisa renovar o token de login para a liberação valer.
+    """
+    try:
+        convites.resgatar(dados.codigo, uid)
+    except convites.ConviteInvalido:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "Código de convite não encontrado. Confira as letras e os números."
+        )
+    except convites.ConviteJaUsado:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este código de convite já foi usado por outra conta.")
+    liberar_no_login(uid)
+    return Conta(uid=uid, convite=True, privacidade=None)
 
 
 @router.post("/privacidade", response_model=Aceite, summary="Registrar aceite da Política de Privacidade")
@@ -38,8 +58,8 @@ def apagar_dados(repo: Repo):
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT, summary="Excluir minha conta")
-def excluir_conta(uid: Usuario, repo: Repo):
-    """Exclui a conta de vez (direito de eliminação da LGPD).
+def excluir_conta(uid: Usuario, repo: RepoDaConta):
+    """Exclui a conta de vez (direito de eliminação da LGPD). Funciona mesmo sem convite.
 
     Apaga todos os dados guardados no banco e depois o próprio login no Firebase Authentication.
     Não pode ser desfeito.

@@ -56,6 +56,7 @@ function alternarModo() {
   document.getElementById("trocar-modo").textContent = criandoConta ? "Entrar" : "Criar conta grátis";
   document.getElementById("area-esqueci").hidden = criandoConta;
   document.getElementById("area-aceite").hidden = !criandoConta;
+  document.getElementById("area-convite").hidden = !criandoConta;
   document.getElementById("ajuda-senha").hidden = !criandoConta;
   document.getElementById("senha").autocomplete = criandoConta ? "new-password" : "current-password";
 }
@@ -64,25 +65,44 @@ async function enviar(evento) {
   evento.preventDefault();
   const email = document.getElementById("email").value.trim();
   const senha = document.getElementById("senha").value;
+  const convite = document.getElementById("convite").value.trim();
+  if (criandoConta && !convite) {
+    mostrar("sucesso", "");
+    mostrar("erro", "Para criar a conta, digite o seu código de convite.");
+    return;
+  }
   if (criandoConta && !document.getElementById("aceite").checked) {
     mostrar("sucesso", "");
     mostrar("erro", "Para criar a conta, marque que você concorda com a Política de Privacidade.");
     return;
   }
   const botao = document.getElementById("botao-enviar");
+  const restaurarBotao = () => {
+    botao.disabled = false;
+    botao.textContent = criandoConta ? "Criar conta" : "Entrar";
+  };
   botao.disabled = true;
   botao.innerHTML = `<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Entrando…`;
   try {
     if (criandoConta) {
       await autenticacao.createUserWithEmailAndPassword(email, senha);
+      try {
+        await usarConvite(convite);
+      } catch (erroConvite) {
+        // Código recusado: desfaz a conta recém-criada, para a pessoa poder tentar de novo com o mesmo e-mail.
+        await autenticacao.currentUser.delete().catch(() => autenticacao.signOut());
+        mostrar("sucesso", "");
+        mostrar("erro", erroConvite.message);
+        restaurarBotao();
+        return;
+      }
     } else {
       await autenticacao.signInWithEmailAndPassword(email, senha);
     }
     await concluirLogin();
   } catch (erro) {
     mostrarErro(erro);
-    botao.disabled = false;
-    botao.textContent = criandoConta ? "Criar conta" : "Entrar";
+    restaurarBotao();
   }
 }
 

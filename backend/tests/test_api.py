@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.db.exemplo import criar_repositorio_exemplo
-from app.db.repositorio import obter_repositorio
+from app.db.repositorio import obter_repositorio, obter_repositorio_da_conta
 from app.main import app
 
 
@@ -16,6 +16,7 @@ from app.main import app
 def client():
     repo = criar_repositorio_exemplo()
     app.dependency_overrides[obter_repositorio] = lambda: repo
+    app.dependency_overrides[obter_repositorio_da_conta] = lambda: repo
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -37,7 +38,7 @@ def test_apagar_dados_e_carregar_exemplo(client):
 
 
 def test_sem_login_usuario_e_demo(client):
-    assert client.get("/conta").json() == {"uid": "demo", "privacidade": None}
+    assert client.get("/conta").json() == {"uid": "demo", "convite": True, "privacidade": None}
 
 
 def test_registrar_aceite_da_privacidade(client):

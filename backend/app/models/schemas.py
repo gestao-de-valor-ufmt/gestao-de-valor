@@ -25,7 +25,12 @@ class Aceite(BaseModel):
 
 class Conta(BaseModel):
     uid: str
+    convite: bool = Field(description="Se a conta já usou um código de convite e pode usar o sistema.")
     privacidade: Aceite | None = Field(description="Aceite da Política de Privacidade, se houver.")
+
+
+class ConviteEntrada(BaseModel):
+    codigo: str = Field(min_length=1, max_length=30, description="Código de convite.", examples=["GV-7K3M-Q9XP"])
 
 
 # ---------- Seu mês ----------

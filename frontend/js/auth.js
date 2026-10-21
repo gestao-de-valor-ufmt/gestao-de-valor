@@ -24,8 +24,76 @@ async function exigirLogin() {
     location.replace(`login.html?voltar=${voltar}`);
     return new Promise(() => {}); // a página para aqui enquanto o navegador troca de endereço
   }
+  await verificarConvite(usuario);
   await verificarAceite(usuario);
   return usuario;
+}
+
+// ---------- Convite ----------
+// A liberação fica gravada no próprio login (marca "convite" no token), então conferir não chama a API.
+
+async function temConvite(usuario, renovar = false) {
+  const token = await usuario.getIdTokenResult(renovar);
+  return token.claims.convite === true;
+}
+
+// Resgata o código na API e renova o login para a marca de convite passar a valer.
+async function usarConvite(codigo) {
+  await api("/conta/convite", { metodo: "POST", corpo: { codigo } });
+  await autenticacao.currentUser.getIdToken(true);
+}
+
+async function verificarConvite(usuario) {
+  if (await temConvite(usuario)) return;
+  // Pode ter sido liberada há pouco (por código ou pela equipe): renova o login antes de pedir o código.
+  if (await temConvite(usuario, true)) return;
+  await pedirConvite();
+}
+
+// Janela que só fecha quando a pessoa informa um código válido (ou sai do sistema).
+function pedirConvite() {
+  return new Promise((resolver) => {
+    const modal = document.createElement("div");
+    modal.className = "modal fade";
+    modal.tabIndex = -1;
+    modal.setAttribute("aria-labelledby", "titulo-convite");
+    modal.innerHTML = `
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content">
+          <div class="modal-header"><h2 class="modal-title h5" id="titulo-convite">Código de convite</h2></div>
+          <div class="modal-body">
+            <p>Por enquanto, o Gestão de Valor é só para convidados. Digite o código que você recebeu.</p>
+            <label class="form-label" for="codigo-convite">Código</label>
+            <input class="form-control text-uppercase" id="codigo-convite" placeholder="GV-XXXX-XXXX" autocomplete="off" required>
+            <div class="text-danger small mt-2" data-erro hidden></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-acao="sair">Sair</button>
+            <button class="btn btn-primary" data-acao="usar">Usar código</button>
+          </div>
+        </form>
+      </div>`;
+    document.body.appendChild(modal);
+    const janela = new bootstrap.Modal(modal, { backdrop: "static", keyboard: false });
+    const erro = modal.querySelector("[data-erro]");
+    const botao = modal.querySelector("[data-acao=usar]");
+    modal.querySelector("[data-acao=sair]").addEventListener("click", sair);
+    modal.querySelector("form").addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      botao.disabled = true;
+      erro.hidden = true;
+      try {
+        await usarConvite(modal.querySelector("#codigo-convite").value.trim());
+        janela.hide();
+        resolver();
+      } catch (falha) {
+        erro.textContent = falha.message;
+        erro.hidden = false;
+        botao.disabled = false;
+      }
+    });
+    janela.show();
+  });
 }
 
 // ---------- Aceite da Política de Privacidade (LGPD) ----------

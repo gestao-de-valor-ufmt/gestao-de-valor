@@ -35,7 +35,8 @@ Site → router (recebe e confere os dados) → services (calcula) → core (fó
 
 | Tela do site | Método e caminho | O que faz |
 |---|---|---|
-| — | `GET /conta` | Quem está logado (uid) e o aceite da Política de Privacidade |
+| — | `GET /conta` | Quem está logado (uid), se já tem convite e o aceite da Política de Privacidade |
+| Login | `POST /conta/convite` | Usa um código de convite e libera a conta (uso único, não vence) |
 | Login | `POST /conta/privacidade` | Registra o aceite da Política de Privacidade (versão e data) |
 | Seu mês | `POST /conta/exemplo` | Apaga os dados do usuário e carrega o exemplo da manicure |
 | Seu mês | `DELETE /conta/dados` | Apaga contas, materiais e serviços (a conta continua) |
@@ -89,6 +90,7 @@ Site → router (recebe e confere os dados) → services (calcula) → core (fó
 | Código | Quando |
 |---|---|
 | `401` | Sem login, ou com o token vencido ou inválido |
+| `403` | Conta sem convite resgatado |
 | `404` | O id informado não existe |
 | `409` | Tentativa de apagar um material usado em algum serviço |
 | `422` | Dados inválidos (salário negativo, tempo zero, material inexistente, taxa de 100%…) |
@@ -111,6 +113,30 @@ Todos os endpoints, menos /calculadora/simular, /calculadora/rendimento e /healt
 5. A API lê e grava só em `usuarios/{uid}`. Sem token, ou com token vencido, a resposta é `401`.
 
 No Swagger, clique em **Authorize** e cole um token para testar os endpoints protegidos.
+
+## Convites
+
+Por enquanto, só usa o sistema quem tem um código de convite. Cada código vale para uma conta e não vence.
+
+- Os códigos (`GV-XXXX-XXXX`, sem 0/O, 1/I/L e U/V) ficam em `convites/{codigo}` no Firestore.
+- `POST /conta/convite` marca o código como usado numa transação e grava a marca `convite` no
+  login da pessoa (custom claim do Firebase). A API confere essa marca no próprio token, sem ler
+  o banco: conta sem a marca recebe `403` em tudo, menos `GET /conta`, `POST /conta/convite`,
+  `DELETE /conta` e os endpoints públicos.
+- Quem cria a conta com e-mail informa o código no cadastro; quem entra pelo Google pela primeira
+  vez vê uma janela pedindo o código.
+
+A equipe gerencia os códigos com o script `backend/scripts/convites.py` (rodado no computador,
+com a chave do Firebase):
+
+```bash
+cd backend
+.venv\Scripts\activate
+python scripts/convites.py gerar --quantidade 10 --nota "evento 25/10"   # cria códigos
+python scripts/convites.py listar                                        # códigos e quem usou
+python scripts/convites.py contas                                        # contas com e sem convite
+python scripts/convites.py liberar --email pessoa@exemplo.com            # libera sem código
+```
 
 ## Configuração
 
