@@ -44,6 +44,7 @@ usuarios/                          (coleção)
 | `configuracao.horas_por_dia` | número | Horas atendendo por dia, com deslocamento |
 | `configuracao.taxa_cartao` | número | Taxa da maquininha (%) |
 | `proximos_ids.contas` / `.materiais` / `.servicos` | número | Próximo id a usar em cada subcoleção |
+| `convite.codigo` / `convite.usado_em` | texto / data | Código de convite que liberou a conta, e quando |
 | `privacidade.versao` | texto | Versão da Política de Privacidade aceita (LGPD) |
 | `privacidade.aceito_em` | data e hora | Quando a política foi aceita (prova do consentimento) |
 
@@ -85,6 +86,20 @@ O **custo por uso** (`preco / rendimento`) não é guardado: a API calcula na ho
   risco de valores desatualizados no banco.
 - **Leituras agrupadas.** Para montar o painel, a API lê a configuração, as contas e os materiais
   uma única vez e reaproveita para todos os serviços.
+
+### `convites/{codigo}`
+
+Coleção separada, fora das pastas dos usuários. O id do documento é o próprio código.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `criado_em` | data e hora | Quando o código foi gerado |
+| `nota` | texto | Lembrete da equipe (por exemplo, "evento 25/10") |
+| `usado_por` | texto | `uid` da conta que usou o código; nulo enquanto livre |
+| `usado_em` | data e hora | Quando o código foi usado |
+
+O resgate é feito numa transação que lê `convites/{codigo}` e grava, ao mesmo tempo, o código
+como usado e `usuarios/{uid}.convite`. Assim, duas pessoas nunca usam o mesmo código.
 
 ## Privacidade (LGPD)
 

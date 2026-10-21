@@ -6,6 +6,8 @@ O Gestão de Valor ajuda você a descobrir **quanto cobrar** pelos seus serviço
 
 **1. Crie a sua conta.** Na tela de entrada, clique em **Continuar com Google** ou em **Criar conta grátis** (com e-mail e senha). Seus dados ficam guardados na sua conta: você pode entrar de qualquer computador ou celular.
 
+Por enquanto, o sistema é **só para convidados**: na criação da conta (ou no primeiro acesso com o Google), digite o **código de convite** que você recebeu, no formato `GV-XXXX-XXXX`. Cada código vale para uma pessoa e não vence.
+
 **2. Escolha como começar.** Na primeira vez, o sistema pergunta:
 - **Cadastrar os meus dados:** você preenche tudo do zero.
 - **Ver um exemplo pronto:** a conta é preenchida com os dados de uma manicure a domicílio, para você explorar. Depois é só editar ou apagar.
@@ -115,6 +117,9 @@ Em **Seu mês**, no cartão **Sua conta**:
 - **Baixar meus dados:** salva um arquivo com tudo o que está guardado na sua conta.
 - **Recomeçar do zero:** apaga contas, materiais e serviços, mas mantém a sua conta.
 - **Excluir minha conta:** apaga tudo e também o seu login, de vez. Para confirmar, é preciso digitar EXCLUIR.
+
+**Não tenho código de convite. Como consigo um?**
+Fale com a equipe pelo e-mail que está na **Política de Privacidade**, no rodapé de todas as páginas.
 
 **Esqueci a minha senha.**
 Na tela de entrada, digite o seu e-mail e clique em **Esqueci minha senha**. Você recebe um link para criar uma senha nova (confira também a caixa de spam). Se você entra com o Google, não precisa de senha.

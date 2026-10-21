@@ -20,7 +20,7 @@ from typing import Annotated, Generic, Protocol, TypeVar
 from fastapi import Depends
 from pydantic import BaseModel
 
-from app.auth import Usuario
+from app.auth import Usuario, UsuarioLiberado
 from app.config import configuracoes
 from app.models.schemas import (
     Configuracao,
@@ -237,8 +237,17 @@ class RepositorioFirestore:
 _memoria: dict[str, RepositorioMemoria] = {}
 
 
-def obter_repositorio(uid: Usuario) -> Repositorio:
-    """Dependência do FastAPI: entrega o repositório do usuário logado."""
+def obter_repositorio(uid: UsuarioLiberado) -> Repositorio:
+    """Dependência do FastAPI: entrega o repositório do usuário logado, que precisa ter convite."""
+    return repositorio_de(uid)
+
+
+def obter_repositorio_da_conta(uid: Usuario) -> Repositorio:
+    """O repositório de qualquer conta logada, mesmo sem convite (usado só para excluir a conta)."""
+    return repositorio_de(uid)
+
+
+def repositorio_de(uid: str) -> Repositorio:
     if configuracoes.armazenamento == "firestore":
         from app.db.firebase import cliente_firestore
 
@@ -257,5 +266,7 @@ def esquecer_usuario_da_memoria(uid: str) -> None:
     _memoria.pop(uid, None)
 
 
-# Atalho para os endpoints: "repo: Repo" recebe o repositório automaticamente.
+# Atalhos para os endpoints: "repo: Repo" recebe o repositório (exige convite);
+# "repo: RepoDaConta" não exige, e só serve para excluir a conta.
 Repo = Annotated[Repositorio, Depends(obter_repositorio)]
+RepoDaConta = Annotated[Repositorio, Depends(obter_repositorio_da_conta)]
