@@ -51,14 +51,16 @@
             </div>
 
             <div>
-              <label class="form-label fw-semibold" for="minutos">
+              <label class="form-label fw-semibold" for="horas">
                 <span class="numero-pergunta">3</span>Quanto tempo leva cada atendimento?
               </label>
               <div class="input-group">
-                <input class="form-control" type="number" min="5" step="5" id="minutos">
+                <input class="form-control" type="number" min="0" max="24" step="1" id="horas" placeholder="0" aria-label="Horas">
+                <span class="input-group-text">horas</span>
+                <input class="form-control" type="number" min="0" step="1" id="minutos" placeholder="0" aria-label="Minutos">
                 <span class="input-group-text">minutos</span>
               </div>
-              <div class="form-text">Contando o deslocamento até o cliente.</div>
+              <div class="form-text">Contando o deslocamento até o cliente. Ex.: 1 hora e 30 minutos.</div>
             </div>
 
             <div>
@@ -97,6 +99,7 @@
             <div class="small text-secondary"><i class="bi bi-calendar-check me-1"></i><span id="titulo-cobrando"></span></div>
             <div class="preco-destaque mb-1" id="necessarios"></div>
             <p class="mb-3" id="texto-necessarios"></p>
+            <div class="alert alert-light border py-2 small mb-3" id="texto-hora"></div>
             <div class="alert alert-light border py-2 small mb-3" id="texto-liquido"></div>
             <div class="progress barra-capacidade mb-1" role="progressbar" aria-label="Quanto da agenda é preciso ocupar" id="barra">
               <div class="progress-bar" id="barra-preenchimento"></div>

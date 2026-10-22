@@ -150,6 +150,7 @@ def test_analise_da_manicure(client):
     assert a["parte_da_meta"] == 20.35
     assert a["preco_minimo"] == 26.07
     assert a["sobra"] == 34.28
+    assert a["ganho_por_hora"] == 34.28  # manicure de 60 min: a sobra é o ganho da hora
     assert a["atendimentos_necessarios"] == 79
     assert a["capacidade"] == 132
     assert a["desconto_maximo"] == 13.93

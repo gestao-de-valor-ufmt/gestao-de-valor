@@ -5,9 +5,36 @@ let grafico = null;
 
 function montarIndicadores() {
   document.getElementById("ind-meta").textContent = moeda(resumo.meta);
-  document.getElementById("ind-hora").textContent = moeda(resumo.valor_da_hora);
+  montarGanhoPorHora();
   document.getElementById("ind-horas").textContent = `${numero(resumo.horas_de_atendimento)} h`;
   document.getElementById("ind-servicos").textContent = resumo.servicos.length;
+}
+
+// Quanto sobra por hora de trabalho com os preços atuais: um valor, ou de quanto a quanto
+// quando há vários serviços. Embaixo, o mínimo por hora para pagar salário e contas.
+function montarGanhoPorHora() {
+  const valor = document.getElementById("ind-hora");
+  const minimo = document.getElementById("ind-hora-minimo");
+  const ganhos = resumo.servicos.filter((a) => a.preco_cobrado > 0).map((a) => a.ganho_por_hora);
+  if (!ganhos.length) {
+    valor.textContent = "—";
+    minimo.textContent = "informe quanto você cobra";
+    return;
+  }
+  const menor = Math.min(...ganhos);
+  const maior = Math.max(...ganhos);
+  valor.classList.toggle("valor-faixa", maior - menor >= 0.005);
+  valor.innerHTML = maior - menor < 0.005
+    ? moeda(menor)
+    : `${moeda(menor)} <span class="fw-normal fs-6">a</span> ${moeda(maior)}`;
+
+  if (resumo.meta === 0) {
+    minimo.textContent = "tirando os gastos";
+  } else if (menor < resumo.valor_da_hora - 0.005) {
+    minimo.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>mínimo: ${moeda(resumo.valor_da_hora)}</span>`;
+  } else {
+    minimo.innerHTML = `<i class="bi bi-check-circle text-success me-1"></i>mínimo: ${moeda(resumo.valor_da_hora)}`;
+  }
 }
 
 function montarTabela() {
@@ -33,11 +60,12 @@ function montarTabela() {
         <td><a class="fw-medium text-reset" href="calculadora.html?servico=${a.servico_id}">${escapar(a.nome)}</a></td>
         <td class="text-end">${moeda(a.preco_minimo)}</td>
         <td class="text-end fw-semibold ${abaixo ? "text-danger" : ""}">${moeda(a.preco_cobrado)}</td>
+        <td class="text-end ${abaixo ? "text-danger" : ""}">${a.preco_cobrado > 0 ? moeda(a.ganho_por_hora) : "—"}</td>
         <td style="min-width: 150px">${necessarios}</td>
       </tr>`;
   });
   document.getElementById("tabela-servicos").innerHTML = linhas.join("") ||
-    `<tr><td colspan="4" class="text-secondary">Nenhum serviço cadastrado. <a href="servicos.html">Cadastrar serviço</a></td></tr>`;
+    `<tr><td colspan="5"class="text-secondary">Nenhum serviço cadastrado. <a href="servicos.html">Cadastrar serviço</a></td></tr>`;
 }
 
 function montarGrafico() {

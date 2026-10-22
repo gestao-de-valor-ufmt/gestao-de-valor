@@ -36,7 +36,7 @@ function montarLista() {
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
                 <h2 class="h5 fw-semibold mb-0">${escapar(s.nome)}</h2>
-                <span class="small text-secondary"><i class="bi bi-clock me-1"></i>${numero(s.minutos)} min</span>
+                <span class="small text-secondary"><i class="bi bi-clock me-1"></i>${formatarTempo(s.minutos)}</span>
               </div>
               <div class="d-flex gap-3">
                 <button class="btn btn-sm btn-link p-0" onclick="abrirEdicao(${s.id})" aria-label="Editar ${escapar(s.nome)}" title="Editar">
@@ -63,6 +63,8 @@ function montarLista() {
                 ${campoValor(s.id, "preco_cobrado", s.preco_cobrado, 1)}
               </div>
               ${abaixo ? `<div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle me-1"></i>Abaixo do mínimo</div>` : ""}
+              ${a && a.preco_cobrado > 0 ? `<div class="linha-composicao small text-secondary"><span>Você ganha por hora</span>
+                <span class="${abaixo ? "text-danger" : ""}">${moeda(a.ganho_por_hora)}</span></div>` : ""}
               <a class="btn btn-outline-primary btn-sm w-100 mt-3" href="calculadora.html?servico=${s.id}">
                 <i class="bi bi-calculator me-1"></i>Abrir na calculadora
               </a>
@@ -120,7 +122,8 @@ function adicionarLinhaInsumo(materialId = null, quantidade = 1) {
       <a href="insumos.html">Cadastrar materiais</a> (dá para salvar o serviço sem material e completar depois).</p>`;
     return;
   }
-  const opcoes = materiais.map((m) =>
+  // A linha começa sem material escolhido; se ficar assim, é ignorada ao salvar.
+  const opcoes = `<option value="">Escolha o material…</option>` + materiais.map((m) =>
     `<option value="${m.id}" ${m.id === materialId ? "selected" : ""}>${escapar(m.nome)}</option>`).join("");
   const linha = document.createElement("div");
   linha.className = "row g-2 align-items-center linha-insumo";
@@ -153,7 +156,7 @@ function prepararModal(evento) {
     return;
   }
   document.getElementById("servico-nome").value = servico.nome;
-  document.getElementById("servico-minutos").value = servico.minutos;
+  preencherTempo("servico-horas", "servico-min", servico.minutos);
   document.getElementById("servico-outros").value = servico.outros_gastos ?? 0;
   document.getElementById("servico-preco").value = servico.preco_cobrado ?? 0;
   if (!servico.materiais.length) adicionarLinhaInsumo();
@@ -162,15 +165,24 @@ function prepararModal(evento) {
 
 async function salvarModal(e) {
   e.preventDefault();
+  const minutos = lerTempo("servico-horas", "servico-min");
+  const campoMinutos = document.getElementById("servico-min");
+  if (minutos <= 0) {
+    campoMinutos.setCustomValidity("Informe quanto tempo leva o atendimento.");
+    campoMinutos.reportValidity();
+    return;
+  }
   const corpo = {
     nome: document.getElementById("servico-nome").value.trim(),
-    minutos: Number(document.getElementById("servico-minutos").value),
+    minutos,
     outros_gastos: Number(document.getElementById("servico-outros").value) || 0,
     preco_cobrado: Number(document.getElementById("servico-preco").value) || 0,
-    materiais: [...document.querySelectorAll(".linha-insumo")].map((linha) => ({
-      material_id: Number(linha.querySelector("select").value),
-      quantidade: Number(linha.querySelector("input").value) || 0,
-    })).filter((i) => i.quantidade > 0),
+    materiais: [...document.querySelectorAll(".linha-insumo")]
+      .filter((linha) => linha.querySelector("select").value)
+      .map((linha) => ({
+        material_id: Number(linha.querySelector("select").value),
+        quantidade: Number(linha.querySelector("input").value) || 0,
+      })).filter((i) => i.quantidade > 0),
   };
   const botao = document.getElementById("botao-salvar-servico");
   botao.disabled = true;
@@ -195,6 +207,9 @@ async function iniciar() {
   document.getElementById("adicionar-linha").addEventListener("click", () => adicionarLinhaInsumo());
   document.getElementById("modal-servico").addEventListener("show.bs.modal", prepararModal);
   document.getElementById("form-servico").addEventListener("submit", salvarModal);
+  for (const id of ["servico-horas", "servico-min"]) {
+    document.getElementById(id).addEventListener("input", () => document.getElementById("servico-min").setCustomValidity(""));
+  }
 
   carregando(document.getElementById("lista-servicos"));
   try {
