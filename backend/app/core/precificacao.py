@@ -145,6 +145,18 @@ def sobra_por_atendimento(preco: float, gasto: float, taxa_cartao: float = 0) ->
     return preco * (1 - taxa_cartao / 100) - gasto
 
 
+def ganho_por_hora(sobra: float, minutos: float) -> float:
+    """Quanto a pessoa ganha por hora de trabalho num serviço, cobrando o preço atual.
+
+    É a sobra do atendimento (preço menos gastos e taxa) dividida pelo tempo que ele leva.
+    Comparado com valor_da_hora(), mostra se o serviço paga o salário e as contas com folga.
+    Negativo quando o preço não cobre nem os gastos.
+    """
+    if minutos <= 0:
+        raise ValueError("O tempo do atendimento precisa ser maior que zero.")
+    return sobra / (minutos / 60)
+
+
 def atendimentos_necessarios(meta: float, sobra: float) -> int:
     """Quantos atendimentos no mês são necessários para bater a meta.
 

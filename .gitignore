@@ -237,3 +237,7 @@ node_modules/
 .idea/
 Thumbs.db
 .DS_Store
+# Listas de códigos de convite guardadas pela equipe (nunca enviar: o repositório é público)
+codigos_convite*
+convites*.txt
+convites*.csv

@@ -13,6 +13,7 @@ from app.core.precificacao import (
     custo_material,
     custo_por_uso,
     desconto_maximo,
+    ganho_por_hora,
     gasto_por_atendimento,
     horas_de_atendimento,
     meta_mensal,
@@ -184,6 +185,17 @@ def test_somar_a_taxa_ao_preco_nao_basta():
 
 def test_sobra_por_atendimento_com_taxa():
     assert sobra_por_atendimento(31.25, 10, taxa_cartao=4) == pytest.approx(20)
+
+
+def test_ganho_por_hora():
+    # Liso de 4 horas: cobra R$ 250, gasta R$ 78,60 → sobram R$ 171,40 → R$ 42,85 por hora
+    assert arredondar_moeda(ganho_por_hora(171.40, 240)) == 42.85
+    # Cobrando o preço mínimo, ganha exatamente o valor da hora
+    assert ganho_por_hora(20, 60) == 20
+
+
+def test_ganho_por_hora_negativo_quando_preco_nao_cobre_gastos():
+    assert ganho_por_hora(-10, 30) == -20
 
 
 def test_atendimentos_necessarios_arredonda_para_cima():

@@ -76,6 +76,28 @@ function numero(valor, casas = 0) {
   return valor.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
 }
 
+// Mostra um tempo em minutos do jeito que se fala: "40 min", "4h", "1h30".
+function formatarTempo(minutos) {
+  const total = Math.round(minutos);
+  if (total < 60) return `${total} min`;
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+  return resto ? `${horas}h${String(resto).padStart(2, "0")}` : `${horas}h`;
+}
+
+// Campos de tempo em par (horas + minutos). Quem só usa minutos pode deixar as horas vazias.
+function lerTempo(idHoras, idMinutos) {
+  const horas = Math.max(0, Number(document.getElementById(idHoras).value) || 0);
+  const minutos = Math.max(0, Number(document.getElementById(idMinutos).value) || 0);
+  return horas * 60 + minutos;
+}
+
+function preencherTempo(idHoras, idMinutos, minutos) {
+  const total = Math.round(minutos || 0);
+  document.getElementById(idHoras).value = Math.floor(total / 60);
+  document.getElementById(idMinutos).value = total % 60;
+}
+
 // Evita que texto digitado pelo usuário seja interpretado como HTML.
 function escapar(texto) {
   const div = document.createElement("div");

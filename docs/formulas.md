@@ -125,6 +125,25 @@ Negativo significa que o preço já está abaixo do mínimo e não há espaço p
 
 Exemplo (manicure): R$ 40 − R$ 26,07 = **R$ 13,93**.
 
+## 7. Ganho por hora
+
+```
+ganho_por_hora = sobra_por_atendimento / (minutos / 60)
+```
+
+É quanto a pessoa ganha de fato por hora de trabalho, com o preço que cobra hoje, depois de
+pagar material, deslocamento e maquininha. O painel compara esse número com o `valor_da_hora`
+(seção 3), que é o **mínimo** por hora para pagar salário e contas.
+
+Exemplo (cabeleireira, escova lisa de 4 h): cobra R$ 250 e gasta R$ 78,60 → sobram R$ 171,40
+→ R$ 171,40 / 4 h = **R$ 42,85 por hora**, o dobro do mínimo de R$ 20,59.
+
+Cobrando exatamente o preço mínimo (sem maquininha), o ganho por hora é igual ao valor da hora.
+
+**Por que existe:** a primeira versão do painel mostrava só o `valor_da_hora` com o rótulo
+"Cada hora rende". Usuárias leram como "quanto eu ganho por hora" e não entenderam o número,
+que é uma meta, e não um resultado. Agora o painel mostra o ganho real, com o mínimo embaixo.
+
 ## Histórico: por que a calculadora mudou
 
 A primeira versão usava conceitos de contabilidade: **margem de lucro em %** (markup divisor),

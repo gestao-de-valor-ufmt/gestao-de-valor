@@ -99,6 +99,21 @@ main {
   line-height: 1.2;
 }
 
+.indicador .valor-faixa {
+  font-size: 1.2rem;
+}
+
+/* No celular, os cartões ficam em duas colunas: o número diminui para não quebrar no meio. */
+@media (max-width: 575.98px) {
+  .indicador .valor {
+    font-size: 1.3rem;
+  }
+
+  .indicador .valor-faixa {
+    font-size: 1.05rem;
+  }
+}
+
 .indicador .icone {
   width: 2.5rem;
   height: 2.5rem;

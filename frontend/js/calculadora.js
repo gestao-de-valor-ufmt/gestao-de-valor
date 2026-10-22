@@ -1,7 +1,7 @@
 // Calculadora: 4 perguntas → quanto cobrar, quantos atendimentos e quanto dá de desconto.
 // Enquanto a pessoa digita, a API simula o resultado (sem gravar); quando ela para, as mudanças são salvas.
 
-const CAMPOS_SERVICO = { outrosGastos: "outros_gastos", minutos: "minutos", precoCobrado: "preco_cobrado" };
+const CAMPOS_SERVICO = { outrosGastos: "outros_gastos", precoCobrado: "preco_cobrado" };
 
 let configuracao = null;
 let servicos = [];
@@ -30,6 +30,7 @@ function preencherCampos() {
   for (const [idCampo, campo] of Object.entries(CAMPOS_SERVICO)) {
     document.getElementById(idCampo).value = servico[campo] ?? 0;
   }
+  preencherTempo("horas", "minutos", servico.minutos);
 }
 
 const calcular = aoPararDeDigitar(async () => {
@@ -71,12 +72,13 @@ function mostrarResultado(servico, a) {
   texto("preco-minimo", moeda(a.preco_minimo));
   texto("c-material", moeda(a.material));
   texto("c-outros", moeda(a.outros_gastos));
-  texto("c-tempo", `(${numero(servico.minutos)} min × ${moeda(a.parte_da_meta / (servico.minutos / 60))}/h)`);
+  texto("c-tempo", `(${formatarTempo(servico.minutos)} × ${moeda(valorDaHora(servico, a))}/h)`);
   texto("c-parte", moeda(a.parte_da_meta));
   document.getElementById("linha-taxa").hidden = !(configuracao.taxa_cartao > 0);
   texto("c-taxa", moeda(a.taxa_no_minimo));
 
   mostrarNecessarios(a);
+  mostrarGanhoPorHora(servico, a);
   grafico = desenharGraficoMeta(document.getElementById("grafico"), grafico, { ...a, meta: meta() });
 }
 
@@ -133,6 +135,32 @@ function mostrarNecessarios(a) {
     desconto.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Seu preço está <strong>${moeda(-a.desconto_maximo)}</strong>
       abaixo do mínimo. Melhor não dar desconto.`;
   }
+}
+
+// Quanto cada hora de trabalho precisa render para pagar salário e contas.
+function valorDaHora(servico, a) {
+  return a.parte_da_meta / (servico.minutos / 60);
+}
+
+// Quanto a pessoa ganha de fato por hora com o preço atual, comparado com o mínimo.
+function mostrarGanhoPorHora(servico, a) {
+  const caixa = document.getElementById("texto-hora");
+  caixa.hidden = a.atendimentos_necessarios === null;
+  if (caixa.hidden) return;
+  const minimo = valorDaHora(servico, a);
+  let comparacao = "";
+  if (meta() > 0) {
+    const vezes = a.ganho_por_hora / minimo;
+    comparacao = a.ganho_por_hora < minimo - 0.005
+      ? ` Para pagar seu salário e suas contas, cada hora precisa render pelo menos ${moeda(minimo)}.`
+      : vezes >= 1.95
+      ? ` Isso é ${numero(vezes, 1)} vezes o mínimo de ${moeda(minimo)} por hora para pagar salário e contas.`
+      : ` O mínimo para pagar salário e contas é ${moeda(minimo)} por hora.`;
+  }
+  caixa.className = `alert py-2 small mb-3 ${a.ganho_por_hora < minimo - 0.005 ? "alert-warning" : "alert-light border"}`;
+  caixa.innerHTML = `<i class="bi bi-clock-history me-1"></i>Tirando os gastos, você ganha
+    <strong>${moeda(a.ganho_por_hora)} por hora</strong> com esse serviço
+    (${moeda(a.sobra)} em ${formatarTempo(servico.minutos)}).${comparacao}`;
 }
 
 // Quanto a maquininha desconta do preço cobrado e quanto cai na conta.
@@ -214,6 +242,15 @@ async function iniciar() {
     document.getElementById(idCampo).addEventListener("input", (e) => {
       const servico = servicoSelecionado();
       servico[campo] = Math.max(0, Number(e.target.value) || 0);
+      calcular();
+      salvarServico(servico);
+    });
+  }
+
+  for (const id of ["horas", "minutos"]) {
+    document.getElementById(id).addEventListener("input", () => {
+      const servico = servicoSelecionado();
+      servico.minutos = lerTempo("horas", "minutos");
       calcular();
       salvarServico(servico);
     });

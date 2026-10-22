@@ -61,14 +61,14 @@ O sistema calcula o **custo por uso**. Exemplo: um esmalte de R$ 12,00 que rende
 É o seu "cardápio". Clique em **Novo serviço** e informe:
 
 - **Nome** do serviço.
-- **Tempo:** quanto leva, contando o deslocamento até o cliente.
+- **Tempo:** quanto leva, contando o deslocamento até o cliente. Preencha em horas e minutos: 1 hora e 30 minutos, por exemplo, ou só os minutos (deixe as horas em 0).
 - **Deslocamento e outros gastos:** gasolina, passagem, gás, detergente… um valor aproximado por atendimento.
 - **Quanto você cobra** hoje.
 - **Material usado:** escolha os materiais e a quantidade de cada um. Clique em **Adicionar material** para incluir mais um, e no **✕** para tirar.
 
 Para mudar um serviço depois, clique no **lápis**. Para apagar, na **lixeira**.
 
-Cada cartão mostra **Cobre pelo menos**: o menor preço que paga o material e a sua parte do salário e das contas. Se o seu preço estiver abaixo, aparece o aviso **Abaixo do mínimo**.
+Cada cartão mostra **Cobre pelo menos**: o menor preço que paga o material e a sua parte do salário e das contas. Se o seu preço estiver abaixo, aparece o aviso **Abaixo do mínimo**. Logo abaixo, **Você ganha por hora** mostra quanto sobra para você em cada hora daquele serviço.
 
 ## Calculadora
 
@@ -83,6 +83,7 @@ A calculadora responde 4 perguntas sobre o serviço escolhido. O que você muda 
 
 - **Cobre pelo menos:** o preço mínimo. Abaixo dele, você trabalha e não consegue pagar o seu salário e as suas contas. Logo abaixo aparece de onde vem cada parte do valor.
 - **Atendimentos por mês:** quantos clientes você precisa atender, cobrando o seu preço, para bater a meta. A barra mostra quanto da sua agenda isso ocupa.
+- **Ganho por hora:** quanto você ganha em cada hora de trabalho com esse serviço, já tirando os gastos, e quanto precisaria ganhar no mínimo.
 - **Valor líquido:** se você usa maquininha, quanto ela desconta e quanto você recebe de fato.
 - **Desconto:** até quanto você pode baixar o preço sem mexer no seu salário.
 - **Gráfico:** a linha azul é o que sobra para você a cada atendimento; a tracejada é a sua meta. Onde elas se cruzam, você já ganhou o que queria no mês.
@@ -92,8 +93,8 @@ A calculadora responde 4 perguntas sobre o serviço escolhido. O que você muda 
 A página inicial resume tudo:
 
 - **Meta do mês:** salário + contas + reserva.
-- **Cada hora rende:** quanto cada hora atendendo precisa render para bater a meta.
-- **Seus preços:** para cada serviço, o mínimo, quanto você cobra e quantos atendimentos precisaria fazer (se fizesse só aquele serviço). Barras verdes estão folgadas; amarelas e vermelhas pedem atenção.
+- **Você ganha por hora:** quanto sobra para você em cada hora de trabalho, já tirando material, deslocamento e maquininha. Com vários serviços, aparece de quanto a quanto. Embaixo vem o **mínimo** por hora para pagar o seu salário e as suas contas: se algum serviço ficar abaixo dele, aparece um aviso vermelho.
+- **Seus preços:** para cada serviço, o mínimo, quanto você cobra, quanto ganha por hora e quantos atendimentos precisaria fazer (se fizesse só aquele serviço). Barras verdes estão folgadas; amarelas e vermelhas pedem atenção.
 
 ## Perguntas frequentes
 
