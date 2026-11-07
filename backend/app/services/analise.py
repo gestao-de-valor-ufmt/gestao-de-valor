@@ -38,6 +38,7 @@ def analisar(
         preco_cobrado=p.arredondar_moeda(preco_cobrado),
         taxa_no_preco=p.arredondar_moeda(taxa_no_preco),
         valor_liquido=p.arredondar_moeda(preco_cobrado - taxa_no_preco),
+        preco_com_taxa=p.arredondar_moeda(p.preco_com_taxa(preco_cobrado, taxa_cartao)),
         sobra=p.arredondar_moeda(sobra),
         ganho_por_hora=p.arredondar_moeda(p.ganho_por_hora(sobra, minutos)),
         atendimentos_necessarios=p.atendimentos_necessarios(meta, sobra) if sobra > 0 else None,

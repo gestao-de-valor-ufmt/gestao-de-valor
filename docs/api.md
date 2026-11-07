@@ -79,6 +79,7 @@ Site → router (recebe e confere os dados) → services (calcula) → core (fó
   "preco_cobrado": 40.0,
   "taxa_no_preco": 0.0,
   "valor_liquido": 40.0,
+  "preco_com_taxa": 40.0,
   "sobra": 34.28,
   "ganho_por_hora": 34.28,
   "atendimentos_necessarios": 79,

@@ -145,6 +145,17 @@ def sobra_por_atendimento(preco: float, gasto: float, taxa_cartao: float = 0) ->
     return preco * (1 - taxa_cartao / 100) - gasto
 
 
+def preco_com_taxa(valor_desejado: float, taxa_cartao: float = 0) -> float:
+    """Quanto cobrar na maquininha para receber o valor desejado inteiro.
+
+    A taxa é cobrada sobre o total, por isso se divide em vez de somar:
+    para receber R$ 40 com 10% de taxa, cobra-se R$ 40 / 0,90 = R$ 44,44 (e não R$ 44).
+    """
+    if not 0 <= taxa_cartao < 100:
+        raise ValueError("A taxa da maquininha precisa estar entre 0% e 100%.")
+    return valor_desejado / (1 - taxa_cartao / 100)
+
+
 def ganho_por_hora(sobra: float, minutos: float) -> float:
     """Quanto a pessoa ganha por hora de trabalho num serviço, cobrando o preço atual.
 

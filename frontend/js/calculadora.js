@@ -171,7 +171,8 @@ function mostrarLiquido(a) {
   if (caixa.hidden) return;
   caixa.innerHTML = `<i class="bi bi-credit-card me-1"></i>Cobrando ${moeda(a.preco_cobrado)} na maquininha
     (${numero(taxa, 1)}%), ela desconta <strong>${moeda(a.taxa_no_preco)}</strong> e você recebe
-    <strong>${moeda(a.valor_liquido)}</strong>.`;
+    <strong>${moeda(a.valor_liquido)}</strong>.<br>
+    Para receber os ${moeda(a.preco_cobrado)} inteiros, cobre <strong>${moeda(a.preco_com_taxa)}</strong> no cartão.`;
 }
 
 // Gravação: espera a pessoa parar de digitar e salva só o que mudou.
