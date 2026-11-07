@@ -162,6 +162,7 @@ def test_analise_com_maquininha(client):
     a = client.get("/servicos/1/analise").json()
     assert a["taxa_no_preco"] == 2.00
     assert a["valor_liquido"] == 38.00
+    assert a["preco_com_taxa"] == 42.11  # R$ 40 / 0,95: cobrando isso, recebe os R$ 40 inteiros
 
 
 def test_analise_preco_abaixo_do_material(client):

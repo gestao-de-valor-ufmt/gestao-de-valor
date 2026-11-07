@@ -84,7 +84,7 @@ A calculadora responde 4 perguntas sobre o serviço escolhido. O que você muda 
 - **Cobre pelo menos:** o preço mínimo. Abaixo dele, você trabalha e não consegue pagar o seu salário e as suas contas. Logo abaixo aparece de onde vem cada parte do valor.
 - **Atendimentos por mês:** quantos clientes você precisa atender, cobrando o seu preço, para bater a meta. A barra mostra quanto da sua agenda isso ocupa.
 - **Ganho por hora:** quanto você ganha em cada hora de trabalho com esse serviço, já tirando os gastos, e quanto precisaria ganhar no mínimo.
-- **Valor líquido:** se você usa maquininha, quanto ela desconta e quanto você recebe de fato.
+- **Valor líquido:** se você usa maquininha, quanto ela desconta e quanto você recebe de fato. Logo abaixo, o sistema mostra quanto cobrar no cartão para receber o seu preço inteiro. Exemplo: com 10% de taxa, para receber R$ 40 você cobra R$ 44,44 (e não R$ 44, porque a taxa é cobrada sobre o total).
 - **Desconto:** até quanto você pode baixar o preço sem mexer no seu salário.
 - **Gráfico:** a linha azul é o que sobra para você a cada atendimento; a tracejada é a sua meta. Onde elas se cruzam, você já ganhou o que queria no mês.
 

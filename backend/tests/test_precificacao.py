@@ -18,6 +18,7 @@ from app.core.precificacao import (
     horas_de_atendimento,
     meta_mensal,
     parte_da_meta,
+    preco_com_taxa,
     preco_minimo,
     rendimento_estimado,
     sobra_por_atendimento,
@@ -181,6 +182,19 @@ def test_somar_a_taxa_ao_preco_nao_basta():
     preco = preco_minimo(gasto=40, parte_meta=0, taxa_cartao=10)
     assert arredondar_moeda(preco) == 44.44
     assert sobra_por_atendimento(preco, gasto=0, taxa_cartao=10) == pytest.approx(40)
+
+
+def test_preco_com_taxa():
+    # Para receber R$ 40 livres com 10% de taxa, cobra-se R$ 44,44, e não R$ 44
+    assert arredondar_moeda(preco_com_taxa(40, 10)) == 44.44
+    assert sobra_por_atendimento(preco_com_taxa(40, 10), gasto=0, taxa_cartao=10) == pytest.approx(40)
+    # Sem maquininha, o preço não muda
+    assert preco_com_taxa(40) == 40
+
+
+def test_preco_com_taxa_invalida():
+    with pytest.raises(ValueError):
+        preco_com_taxa(40, 100)
 
 
 def test_sobra_por_atendimento_com_taxa():

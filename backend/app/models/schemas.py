@@ -111,6 +111,7 @@ class Analise(BaseModel):
     preco_cobrado: float
     taxa_no_preco: float = Field(description="Quanto a maquininha desconta do preço cobrado.")
     valor_liquido: float = Field(description="Quanto a pessoa recebe de fato, depois da maquininha.")
+    preco_com_taxa: float = Field(description="Quanto cobrar na maquininha para receber o preço cobrado inteiro.")
     sobra: float = Field(description="Quanto fica de cada atendimento depois de gastos e taxa.")
     ganho_por_hora: float = Field(description="Sobra dividida pelo tempo do atendimento: quanto se ganha por hora com o preço atual.")
     atendimentos_necessarios: int | None = Field(
